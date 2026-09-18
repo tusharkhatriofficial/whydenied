@@ -27,7 +27,10 @@ These can change the design, so do them before writing features.
 
 - [x] **Read-only denials:** by default they **don't** reach EventBridge. CloudTrail records them, but EventBridge only delivers write calls. Fix: set the rule's state to `ENABLED_WITH_ALL_CLOUDTRAIL_MANAGEMENT_EVENTS` (free, opt-in). Tested 18 Sep with `dynamodb:ListTables`: not delivered before the change, delivered after.
 - [x] **Delay:** about **20–25 seconds** from the call to the event arriving (`sqs:CreateQueue` 24s, `dynamodb:ListTables` 20s). A live demo is realistic.
-- [ ] **Error details:** check that the CloudTrail event includes the principal ARN, the action and the resource for the service used in the demo. Some services (S3, SQS) give very little detail.
+- [x] **Error details:** checked for SQS and DynamoDB. Each event gives:
+  - the role ARN, in `userIdentity.sessionContext.sessionIssuer.arn`. We match this against the Terraform code.
+  - the action, resource and denial reason in `errorMessage`, e.g. *"not authorized to perform: dynamodb:ListTables on resource: arn:…:table/\* because no identity-based policy allows…"*.
+  - Watch out: SQS writes the action in lower case (`sqs:createqueue`). Build the action from `eventSource` plus `eventName` instead.
 
 ## Friday: from catching the error to explaining it
 
