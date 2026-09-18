@@ -1,0 +1,76 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: WhyDenied - turns AWS AccessDenied events into fixes
+
+Globals:
+  Function:
+    Runtime: python3.14
+    Architectures: [arm64]
+    Timeout: 30
+    MemorySize: 256
+
+Resources:
+  # One item per (principal, action, resource), with a seen_count.
+  DenialsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: whydenied-denials
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+
+  AnalyzerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: whydenied-analyzer
+      CodeUri: src/analyzer/
+      Handler: app.handler
+      Environment:
+        Variables:
+          DENIALS_TABLE: !Ref DenialsTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DenialsTable
+
+  AnalyzerLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/lambda/whydenied-analyzer
+      RetentionInDays: 7
+
+  # Catches every denied API call CloudTrail records in this region.
+  # ENABLED_WITH_ALL_CLOUDTRAIL_MANAGEMENT_EVENTS also delivers read-only calls
+  # (List/Get/Describe), which plain ENABLED silently drops. See docs/PLAN.md.
+  DenialRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: whydenied-denials
+      State: ENABLED_WITH_ALL_CLOUDTRAIL_MANAGEMENT_EVENTS
+      EventPattern:
+        detail-type: ["AWS API Call via CloudTrail"]
+        detail:
+          errorCode:
+            - prefix: AccessDenied
+            - UnauthorizedOperation
+            - Client.UnauthorizedOperation
+      Targets:
+        - Id: analyzer
+          Arn: !GetAtt AnalyzerFunction.Arn
+
+  DenialRuleInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref AnalyzerFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt DenialRule.Arn
+
+Outputs:
+  DenialsTableName:
+    Value: !Ref DenialsTable
+  AnalyzerFunctionName:
+    Value: !Ref AnalyzerFunction
