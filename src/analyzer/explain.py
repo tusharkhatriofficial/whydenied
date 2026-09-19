@@ -71,20 +71,25 @@ def _prompt(denial, role_address, terraform_source):
 
 
 def _openai(prompt, key, model):
+    body = {
+        "model": model,
+        "response_format": {"type": "json_object"},
+        "messages": [
+            {"role": "system", "content": SYSTEM},
+            {"role": "user", "content": prompt},
+        ],
+    }
+    if model.startswith(("gpt-5", "o")):
+        # reasoning models think before answering (slow); this task doesn't need much.
+        # Older models like gpt-4.1 reject this field, so only send it where it applies.
+        body["reasoning_effort"] = "minimal"
     req = urllib.request.Request(
         "https://api.openai.com/v1/chat/completions",
         method="POST",
-        data=json.dumps({
-            "model": model,
-            "response_format": {"type": "json_object"},
-            "messages": [
-                {"role": "system", "content": SYSTEM},
-                {"role": "user", "content": prompt},
-            ],
-        }).encode(),
+        data=json.dumps(body).encode(),
         headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
     )
-    with urllib.request.urlopen(req, timeout=15) as resp:
+    with urllib.request.urlopen(req, timeout=25) as resp:
         return json.loads(resp.read())["choices"][0]["message"]["content"]
 
 
