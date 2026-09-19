@@ -16,8 +16,8 @@ Judges score: real problem and impact · meaningful use of AWS · what you learn
 ## Day 0: setup (Friday 18)
 
 - [ ] Root account: turn on MFA, create a $20 budget with an email alert
-- [ ] IAM user `whydenied-dev` with an access key; save it locally with `aws configure --profile whydenied` (never paste keys into a chat)
-- [ ] `brew install awscli aws-sam-cli terraform`
+- [x] IAM user `whydenied-dev` with an access key; save it locally with `aws configure --profile whydenied` (never paste keys into a chat)
+- [x] `brew install awscli aws-sam-cli terraform`
 - [ ] Bedrock: use a Claude model once in the console playground (fill in Anthropic's use-case form if asked)
 - [ ] Ask on the WeMakeDevs Discord or FAQ whether AI coding assistants are allowed
 
@@ -37,16 +37,18 @@ These can change the design, so do them before writing features.
 
 ## Friday: from catching the error to explaining it
 
-- [ ] SAM project skeleton: EventBridge rule → Lambda → DynamoDB
-- [ ] Demo target: Terraform app (a Lambda plus a role that's missing one permission)
-- [ ] Lambda reads the event, extracts principal, action and resource, and saves it with dedupe (hash of principal + action + resource, with a count)
-- [ ] Policy simulator check: confirm the action is missing from the identity policy
+- [x] SAM project skeleton: EventBridge rule → Lambda → DynamoDB
+- [x] Demo target: Terraform app (a Lambda plus a role that's missing one permission). Repo: `whydenied-demo-infra`
+- [x] Lambda reads the event, extracts principal, action and resource, and saves it with dedupe (hash of principal + action + resource, with a count)
+- [ ] ~~Policy simulator check~~ Skipped for now: the `errorMessage` already states the reason (e.g. "no identity-based policy allows").
 
 ## Saturday: from explanation to pull request
 
-- [ ] GitHub App (or a fine-grained token for the MVP): search the repo for the role's `name`
-- [ ] Bedrock prompt: given the Terraform file and the missing action and resource, return the smallest change (no `*`) plus an explanation
-- [ ] Check the change: the Terraform must still parse, and the new statement must only add the missing action on the specific resource
+- [x] Find the role in the Terraform code by its `name` (`terraform.py`)
+- [ ] GitHub access: fine-grained token, limited to `whydenied-demo-infra`, stored in SSM as a SecureString
+- [x] Fix generator: writes the exact missing permission as a new `.tf` file, in code rather than with AI; refuses explicit denies and wildcards
+- [ ] Bedrock (only if the account is unlocked in time): a plain-English explanation for the PR description
+- [x] Check the change: generated file passes `terraform validate` against the demo repo
 - [ ] Open a PR with the explanation as its description
 - [ ] Team alerts with a link to the PR, sent to **Slack and/or Discord**:
   - both use incoming webhooks, so the setup is just a URL per channel
