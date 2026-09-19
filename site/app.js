@@ -50,48 +50,24 @@
   }
 
   const SVG_NS = "http://www.w3.org/2000/svg";
-  // Static icon geometry (trusted constants, never user data).
-  const ICONS = {
-    copy: ["M5.5 5.5V3.25c0-.69.56-1.25 1.25-1.25h6c.69 0 1.25.56 1.25 1.25v6c0 .69-.56 1.25-1.25 1.25H10.5", "M2 6.75c0-.69.56-1.25 1.25-1.25h6c.69 0 1.25.56 1.25 1.25v6c0 .69-.56 1.25-1.25 1.25h-6C2.56 14 2 13.44 2 12.75z"],
-    check: ["M3 8.5 6.5 12 13 4.5"],
-    info: ["M8 1.75a6.25 6.25 0 1 0 0 12.5 6.25 6.25 0 0 0 0-12.5z", "M8 7.25v4", "M8 4.9v.1"],
-    warn: ["M8 2 1.5 13.5h13z", "M8 6.5v3.25", "M8 11.6v.1"],
-    error: ["M8 1.75a6.25 6.25 0 1 0 0 12.5 6.25 6.25 0 0 0 0-12.5z", "M5.75 5.75l4.5 4.5M10.25 5.75l-4.5 4.5"],
-    pr: ["M4 5.3v5.4", "M12 10.7V6.5a2 2 0 0 0-2-2H8", "M9.5 3 8 4.5 9.5 6", "M4 1.7a1.8 1.8 0 1 0 0 3.6 1.8 1.8 0 0 0 0-3.6z", "M4 10.7a1.8 1.8 0 1 0 0 3.6 1.8 1.8 0 0 0 0-3.6z", "M12 10.7a1.8 1.8 0 1 0 0 3.6 1.8 1.8 0 0 0 0-3.6z"],
-    ok: ["M12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17z", "M8.2 12.3l2.6 2.6 5-5.6"],
-    alert: ["M12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17z", "M12 8v4.6", "M12 15.9v.1"],
-    file: ["M4 1.75h5.5L13 5.25v8.5c0 .28-.22.5-.5.5h-8.5a.5.5 0 0 1-.5-.5V2.25c0-.28.22-.5.5-.5z", "M9.5 1.75v3.5H13"],
-    inbox: ["M4 13.5 7 6h18l3 7.5v10a1.5 1.5 0 0 1-1.5 1.5h-21A1.5 1.5 0 0 1 4 23.5z", "M4 13.5h7l1.5 3h7l1.5-3h7"],
-    cloudoff: ["M9 24h13.5a5.5 5.5 0 0 0 .9-10.93A8 8 0 0 0 8.2 14.6 4.75 4.75 0 0 0 9 24z", "M5 5l22 22"],
-    shield: ["M8 1.5 2.5 3.5v4c0 3.2 2.3 5.7 5.5 6.5 3.2-.8 5.5-3.3 5.5-6.5v-4z", "M6 8h4"],
-  };
-
-  function icon(name, cls, viewBox) {
-    const svg = document.createElementNS(SVG_NS, "svg");
-    const big = name === "ok" || name === "alert";
-    svg.setAttribute("viewBox", viewBox || (big ? "0 0 24 24" : name === "inbox" || name === "cloudoff" ? "0 0 32 32" : "0 0 16 16"));
-    svg.setAttribute("aria-hidden", "true");
-    svg.setAttribute("focusable", "false");
-    if (cls) svg.setAttribute("class", cls);
-    for (const d of ICONS[name]) {
-      const p = document.createElementNS(SVG_NS, "path");
-      p.setAttribute("d", d);
-      svg.appendChild(p);
-    }
-    return svg;
-  }
+  const CALLOUT_LABEL = { info: "Note", warn: "Caution", error: "Error", ok: "Passed" };
 
   function callout(kind, ...content) {
-    const iconName = { info: "info", warn: "warn", error: "error", ok: "check" }[kind] || "info";
-    return h("div", { class: "callout callout--" + kind, role: kind === "error" ? "alert" : null }, icon(iconName), h("div", null, ...content));
+    return h("div", { class: "callout callout--" + kind, role: kind === "error" ? "alert" : null },
+      h("span", { class: "callout__label", text: CALLOUT_LABEL[kind] || "Note" }),
+      h("div", null, ...content));
   }
 
-  function tag(kind, text, iconName) {
-    return h("span", { class: "tag tag--" + kind }, iconName ? icon(iconName) : null, text);
+  // A rubber stamp: uppercase mono text with a border in the status colour.
+  // colour: red | green | ink | muted. Text stays real text for assistive tech.
+  let stampTurn = 0;
+  function stamp(colour, text, extra) {
+    const tilt = ["", " stamp--tilt2", " stamp--tilt4"][stampTurn++ % 3];
+    return h("span", { class: "stamp stamp--" + colour + tilt + (extra ? " " + extra : ""), text });
   }
 
   function sampleTag() {
-    return DEMO ? tag("attention", "Sample response") : null;
+    return DEMO ? h("span", { class: "sample", text: "Sample response" }) : null;
   }
 
   let toastTimer = 0;
@@ -123,7 +99,7 @@
 
   function copyButton(getText, label) {
     const text = h("span", { text: "Copy" });
-    const btn = h("button", { type: "button", class: "copy-btn", "aria-label": label || "Copy to clipboard" }, icon("copy"), text);
+    const btn = h("button", { type: "button", class: "copy-btn", "aria-label": label || "Copy to clipboard" }, text);
     btn.addEventListener("click", async () => {
       const ok = await copyText(getText());
       toast(ok ? "Copied to clipboard" : "Copy failed. Select the text instead.");
@@ -276,23 +252,25 @@
 
   const TOKENIZERS = { hcl: tokHCL, json: tokJSON, shell: tokShell, term: tokTerm, plan: tokPlan };
 
-  function highlight(src, lang) {
+  function highlight(src, lang, marks) {
     const frag = document.createDocumentFragment();
     const tok = TOKENIZERS[lang];
     if (!tok) { frag.appendChild(document.createTextNode(src)); return frag; }
+    const marked = new Set((marks || []).filter(Boolean));
     for (const [cls, text] of tok(src)) {
-      if (!cls) frag.appendChild(document.createTextNode(text));
-      else frag.appendChild(h("span", { class: cls, text }));
+      let node = cls ? h("span", { class: cls, text }) : document.createTextNode(text);
+      if (marked.has(text)) node = h("mark", { class: "hl" }, node);
+      frag.appendChild(node);
     }
     return frag;
   }
 
   function codeBlock(opts) {
-    const code = h("code", null, highlight(opts.code, opts.lang));
+    const code = h("code", null, highlight(opts.code, opts.lang, opts.marks));
     const pre = h("pre", { tabindex: "0", "aria-label": opts.label || opts.name || "Code" }, code);
     const head = opts.name || opts.copy !== false
       ? h("div", { class: "code__head" },
-          h("span", { class: "code__name code__name--icon" }, opts.nameIcon === false ? null : icon("file"), h("span", { class: "code__name", text: opts.name || "" })),
+          h("span", { class: "code__name" }, opts.kind ? h("b", { text: opts.kind }) : null, opts.name || ""),
           opts.copy === false ? null : copyButton(() => opts.code, "Copy " + (opts.name || "code")))
       : null;
     return h("div", { class: "code" + (opts.cls ? " " + opts.cls : "") }, head, pre);
@@ -681,45 +659,45 @@
   };
 
   function stageNotes(items) {
-    return h("ul", { class: "notes" }, items.map((t) => h("li", null, icon("check"), h("span", null, t))));
+    return h("ol", { class: "notes" }, items.map((t) => h("li", null, h("span", null, t))));
   }
 
   function aiCard() {
-    return h("div", { class: "ai-card" },
-      h("div", { class: "ai-card__head" },
-        h("span", { class: "ai-card__title", text: "AI review" }),
-        tag("success", "Risk: " + AI_NOTES.risk)),
-      h("p", { class: "ai-card__summary", text: AI_NOTES.summary }),
-      h("dl", { class: "kv kv--flush" },
+    return h("div", { class: "memo" },
+      h("div", { class: "memo__head" },
+        h("span", { text: "Review memo, AI assisted" }),
+        stamp("outline", "Risk " + AI_NOTES.risk, "stamp--flat")),
+      h("p", { class: "memo__summary", text: AI_NOTES.summary }),
+      h("dl", { class: "kv" },
         h("div", { class: "kv__row" }, h("dt", { text: "Looks expected" }), h("dd", { text: AI_NOTES.looks_expected ? "Yes, fits what the role is for" : "No, check this carefully" })),
         h("div", { class: "kv__row" }, h("dt", { text: "Risk" }), h("dd", { text: AI_NOTES.risk_reason })),
         h("div", { class: "kv__row" }, h("dt", { text: "Check first" }), h("dd", { text: AI_NOTES.reviewer_tip }))),
-      h("p", { class: "ai-card__foot", text: "Written by the model from the error and the Terraform. The model returns JSON, which is validated, trimmed to plain text and stripped of links and markup. It never sees or edits the fix." }));
+      h("p", { class: "memo__foot", text: "Written by the model from the error and the Terraform. The model returns JSON, which is validated, trimmed to plain text and stripped of links and markup. It never sees or edits the fix." }));
   }
 
   function slackCard() {
-    return h("div", { class: "chat-card" },
-      h("div", { class: "chat-card__avatar", "aria-hidden": "true", text: "W" }),
-      h("div", { class: "chat-card__main" },
-        h("div", { class: "chat-card__meta" }, h("strong", { text: "WhyDenied" }), h("span", { class: "chat-card__app", text: "APP" }), h("span", { class: "muted", text: "10:24 AM" })),
-        h("div", { class: "chat-card__msg" },
-          h("p", { class: "chat-card__title", text: "AccessDenied: sqs:CreateQueue" }),
-          h("div", { class: "chat-card__fields" },
-            h("div", null, h("strong", { text: "Role" }), h("code", { text: EVT.role })),
-            h("div", null, h("strong", { text: "Status" }), h("span", { text: "Fix PR opened" }))),
-          h("div", { class: "chat-card__field" }, h("strong", { text: "Resource" }), h("code", { text: EVT.resource })),
-          h("a", { class: "btn btn--secondary btn--sm", href: EXAMPLE_PR, rel: "noopener", text: "Review fix PR" }))));
+    return h("div", { class: "chat" },
+      h("div", { class: "chat__avatar", "aria-hidden": "true", text: "W" }),
+      h("div", null,
+        h("div", { class: "chat__meta" }, h("strong", { text: "WhyDenied" }), "app, 10:24"),
+        h("div", { class: "chat__msg" },
+          h("p", { class: "chat__title", text: "AccessDenied: sqs:CreateQueue" }),
+          h("div", { class: "chat__fields" },
+            h("div", { class: "chat__field" }, h("strong", { text: "Role" }), h("code", { text: EVT.role })),
+            h("div", { class: "chat__field" }, h("strong", { text: "Status" }), h("span", { text: "Fix PR opened" }))),
+          h("div", { class: "chat__field" }, h("strong", { text: "Resource" }), h("code", { text: EVT.resource })),
+          h("a", { class: "btn btn--sm", href: EXAMPLE_PR, rel: "noopener", text: "Review fix PR" }))));
   }
 
   function prCard() {
-    const section = (title, ...body) => h("div", { class: "pr-card__section" }, h("h5", { text: title }), ...body);
-    return h("article", { class: "pr-card" },
-      h("header", { class: "pr-card__head" },
-        h("h4", { class: "pr-card__title" }, "WhyDenied: allow sqs:CreateQueue for " + EVT.role + " ", h("span", { class: "muted", text: "#1" })),
-        h("div", { class: "pr-card__sub" },
-          h("span", { class: "state-pill" }, icon("pr"), "Open"),
+    const section = (title, ...body) => h("div", { class: "pr__section" }, h("h5", { text: title }), ...body);
+    return h("article", { class: "pr" },
+      stamp("outline", "PR open", "stamp--corner"),
+      h("header", { class: "pr__head" },
+        h("h4", { class: "pr__title" }, "WhyDenied: allow sqs:CreateQueue for " + EVT.role + " ", h("span", { class: "muted", text: "#1" })),
+        h("div", { class: "pr__sub" },
           h("span", null, h("strong", { text: "whydenied-bot" }), " wants to merge 1 commit into ", h("code", { text: "main" }), " from ", h("code", { text: "whydenied/" + EVT.id })))),
-      h("div", { class: "pr-card__body" },
+      h("div", { class: "pr__body" },
         section("What happened",
           h("p", null, h("code", { text: EVT.roleArn }), " was denied ", h("strong", null, h("code", { text: "sqs:CreateQueue" })), " on ", h("code", { text: EVT.resource }), "."),
           h("p", { class: "muted" }, "AWS said: ", h("em", { text: "because no identity-based policy allows the sqs:createqueue action" }), ". First seen " + EVT.time + " in ", h("code", { text: "us-east-1" }), ".")),
@@ -732,12 +710,11 @@
             h("li", null, h("strong", { text: "Risk if granted: " }), "low. " + AI_NOTES.risk_reason),
             h("li", null, h("strong", { text: "Check before merging: " }), AI_NOTES.reviewer_tip))),
         section("Before merging",
-          h("ul", { class: "pr-card__tasks" },
-            h("li", null, h("span", { class: "pr-card__box", "aria-hidden": "true" }), "The role should be able to do this. If not, close this PR and fix the caller instead."),
-            h("li", null, h("span", { class: "pr-card__box", "aria-hidden": "true" }), "Run ", h("code", { text: "terraform plan" }), " and check the only change is this one policy.")))),
-      h("footer", { class: "pr-card__foot" },
-        h("span", { class: "review-dot", "aria-hidden": "true" }),
-        h("span", { text: "Review required. Merging is blocked until a reviewer approves." }),
+          h("ul", { class: "pr__tasks" },
+            h("li", null, h("span", { class: "pr__box", "aria-hidden": "true" }), "The role should be able to do this. If not, close this PR and fix the caller instead."),
+            h("li", null, h("span", { class: "pr__box", "aria-hidden": "true" }), "Run ", h("code", { text: "terraform plan" }), " and check the only change is this one policy.")))),
+      h("footer", { class: "pr__foot" },
+        h("span", { text: "Approval required. Merging is blocked until a reviewer approves." }),
         h("a", { href: EXAMPLE_PR, rel: "noopener", text: "See a real WhyDenied PR" })));
   }
 
@@ -817,7 +794,7 @@
     {
       id: "github", kicker: "Stage 5", title: "The exact fix, as Terraform",
       desc: "WhyDenied finds the aws_iam_role with name = \"whydenied-test-denied\" in your repository and writes one inline policy next to it, on a new branch.",
-      render: () => codeBlock({ name: EVT.file, lang: "hcl", code: FIX_HCL }),
+      render: () => codeBlock({ kind: "Listing", name: EVT.file, lang: "hcl", code: FIX_HCL, marks: ['"sqs:CreateQueue"'] }),
     },
     {
       id: "ai", kicker: "Optional", title: "AI review notes for the reviewer",
@@ -895,7 +872,8 @@
         n.classList.toggle("is-active", on);
         n.setAttribute("aria-pressed", on ? "true" : "false");
       });
-      $("#stage-kicker").textContent = stage.kicker;
+      const kick = clear($("#stage-kicker"));
+      append(kick, ["Fig. " + (idx + 2), h("span", { text: stage.kicker })]);
       $("#stage-title").textContent = stage.title;
       $("#stage-desc").textContent = stage.desc;
       $("#stage-count").textContent = (idx + 1) + " / " + order.length;
@@ -985,14 +963,12 @@
     function dot(i) {
       if (!pool[i]) {
         const g = document.createElementNS(SVG_NS, "g");
-        const halo = document.createElementNS(SVG_NS, "circle");
-        halo.setAttribute("r", "8");
-        halo.setAttribute("class", "pulse-halo");
-        const core = document.createElementNS(SVG_NS, "circle");
-        core.setAttribute("r", "3.6");
-        core.setAttribute("class", "pulse-core");
-        g.appendChild(halo);
-        g.appendChild(core);
+        const mark = document.createElementNS(SVG_NS, "rect");
+        mark.setAttribute("x", "-3.5");
+        mark.setAttribute("y", "-3.5");
+        mark.setAttribute("width", "7");
+        mark.setAttribute("height", "7");
+        g.appendChild(mark);
         layer.appendChild(g);
         pool[i] = g;
       }
@@ -1159,7 +1135,7 @@
       h("dd", { class: mono ? "mono" : null }, val(v), sub ? h("span", { class: "sub", text: sub }) : null));
 
     const denialPanel = h("section", { class: "panel", "aria-label": "Parsed denial" },
-      h("div", { class: "panel__head" }, h("span", { text: "Parsed denial" }), tag("neutral", TYPE_LABEL[d.principal_type] || val(d.principal_type))),
+      h("div", { class: "panel__head" }, h("span", null, h("b", { text: "Table 1" }), "Parsed denial"), h("span", { text: TYPE_LABEL[d.principal_type] || val(d.principal_type) })),
       h("dl", { class: "kv" },
         row("Role", d.role_name || (d.principal_type === "role" ? null : "Not a role"), d.principal_arn || null, true),
         row("Action", d.action, null, true),
@@ -1168,18 +1144,18 @@
 
     let fixPanel;
     if (fixable) {
-      fixPanel = codeBlock({ name: String(data.fix.filename || "fix.tf"), lang: "hcl", code: data.fix.hcl, label: "Generated Terraform fix" });
+      fixPanel = codeBlock({ kind: "Listing 1", name: String(data.fix.filename || "fix.tf"), lang: "hcl", code: data.fix.hcl, label: "Generated Terraform fix", marks: ['"' + String(d.action || "") + '"'] });
     } else {
       fixPanel = h("section", { class: "panel", "aria-label": "No automatic fix" },
-        h("div", { class: "panel__head" }, h("span", { text: "Terraform fix" })),
+        h("div", { class: "panel__head" }, h("span", null, h("b", { text: "Listing 1" }), "Terraform fix")),
         h("div", { class: "empty-fix" },
-          icon("shield", null),
           h("strong", { text: "No automatic fix" }),
           h("span", { text: "WhyDenied records this denial and alerts a human instead of opening a pull request." })));
     }
 
     const head = h("div", { class: "result__head" },
-      fixable ? tag("success", "Fixable automatically", "check") : tag("attention", "Needs a human", "warn"),
+      fixable ? stamp("outline", "Fixable", "stamp--lg stamp--thunk") : stamp("dashed", "Needs human", "stamp--lg stamp--thunk"),
+      h("span", { class: "result__note", text: fixable ? "WhyDenied would open a pull request with the listing below." : "WhyDenied would record this and alert a human." }),
       sampleTag());
 
     const nodes = [head, h("div", { class: "try-grid" }, denialPanel, fixPanel)];
@@ -1366,10 +1342,10 @@
 
     const fill = h("div", { class: "meter__fill" });
     fill.style.width = total ? Math.round((ready / total) * 100) + "%" : "0%";
-    nodes.push(h("div", { class: "summary-bar" },
+    nodes.push(h("div", { class: "summary" },
       h("div", null,
-        h("div", { class: "summary-bar__num" }, ready + " of " + total),
-        h("div", { class: "summary-bar__label" }, (total === 1 ? "role" : "roles") + " ready in ", repoLink(repo), " (" + fileCount + (fileCount === 1 ? " file" : " files") + ", " + branch + ")")),
+        h("div", { class: "summary__num" }, ready + "/" + total),
+        h("div", { class: "summary__label" }, (total === 1 ? "role" : "roles") + " ready in ", repoLink(repo), " (" + fileCount + (fileCount === 1 ? " file" : " files") + ", " + branch + ")")),
       h("div", { class: "meter", role: "meter", "aria-valuemin": "0", "aria-valuemax": String(total || 0), "aria-valuenow": String(ready), "aria-label": "Roles ready" }, fill),
       sampleTag()));
 
@@ -1377,19 +1353,20 @@
       nodes.push(callout("warn",
         h("p", null, h("strong", { text: "No aws_iam_role resources found." }), " WhyDenied opens fixes against the repository that defines your roles. Point it at the repository with your ", h("code", { text: "aws_iam_role" }), " resources, or add them here.")));
     } else {
-      const list = h("ul", { class: "roles" });
+      const list = h("ol", { class: "roles" });
+      let n = 0;
       for (const r of roles) {
         const ok = r.ready === true;
         const pathLink = r.path
           ? h("a", { href: "https://github.com/" + repo.full + "/blob/" + encPath(branch) + "/" + encPath(String(r.path)), rel: "noopener", text: String(r.path) })
           : null;
         list.appendChild(h("li", { class: "role" },
-          icon(ok ? "ok" : "alert", "role__icon " + (ok ? "role__icon--ok" : "role__icon--warn")),
+          h("span", { class: "role__no", text: "R" + (++n) }),
           h("div", { class: "role__main" },
             r.name ? h("div", { class: "role__name", text: String(r.name) }) : h("div", { class: "role__name is-null", text: "No explicit name" }),
             h("div", { class: "role__meta" }, String(r.address || ""), pathLink ? " in " : null, pathLink),
             !ok && r.issue ? h("p", { class: "role__issue", text: String(r.issue) }) : null),
-          ok ? tag("success", "Ready") : tag("attention", "Needs a change")));
+          ok ? stamp("outline", "Ready") : stamp("dashed", "Needs change")));
       }
       nodes.push(list);
       if (ready === total) nodes.push(callout("ok", h("p", { text: "Every role can be matched. WhyDenied can open fixes for all of them." })));
@@ -1507,12 +1484,13 @@
   /* Live feed                                                           */
   /* ------------------------------------------------------------------ */
 
+  // Status is carried by the stamp's form and word, never by colour alone.
   const STATUS = {
-    pr_open: ["success", "PR open"],
-    needs_human: ["attention", "Needs a human"],
-    role_not_found: ["info", "Role not found"],
-    not_a_role: ["neutral", "Not a role"],
-    error: ["danger", "Error"],
+    pr_open: ["outline", "PR open"],
+    needs_human: ["dashed", "Needs human"],
+    role_not_found: ["dashed", "Role not found"],
+    not_a_role: ["dotted", "Not a role"],
+    error: ["double", "Error"],
   };
 
   function initFeed() {
@@ -1556,7 +1534,6 @@
         setState("error", "Offline");
         if (!hasData) {
           clear(box).appendChild(h("div", { class: "feed-empty" },
-            icon("cloudoff"),
             h("strong", { text: "The feed is unavailable right now" }),
             h("span", { text: apiErrorMessage(err.kind ? err : null, err.res || null) + " It retries every 15 seconds." })));
         }
@@ -1578,7 +1555,6 @@
 
       if (!list.length) {
         clear(box).appendChild(h("div", { class: "feed-empty" },
-          icon("inbox"),
           h("strong", { text: "No denials yet" }),
           h("span", { text: "When a role in the demo account is denied, it appears here within a minute." })));
         return;
@@ -1586,22 +1562,24 @@
 
       const tbody = h("tbody");
       for (const d of list.slice(0, 20)) {
-        const [kind, text] = STATUS[d.status] || ["neutral", String(d.status || "unknown")];
+        const [kind, text] = STATUS[d.status] || ["dotted", String(d.status || "unknown")];
         const last = parseTime(d.last_seen);
         const first = parseTime(d.first_seen);
         let pr = h("span", { class: "feed__none", text: "No PR" });
         if (d.pr_url && /^https:\/\/github\.com\//.test(String(d.pr_url))) {
           const num = /\/pull\/(\d+)/.exec(String(d.pr_url));
-          pr = h("a", { class: "feed__pr", href: String(d.pr_url), rel: "noopener" }, icon("pr"), num ? "#" + num[1] : "View PR");
+          pr = h("a", { class: "feed__pr", href: String(d.pr_url), rel: "noopener" }, num ? "#" + num[1] : "View PR", h("span", { "aria-hidden": "true", text: " \u2197" }));
         }
         const seenN = Number(d.seen_count) || 0;
-        tbody.appendChild(h("tr", { class: fresh.has(keyOf(d)) ? "is-new" : null },
+        const isNew = fresh.has(keyOf(d));
+        tbody.appendChild(h("tr", { class: isNew ? "is-new" : null },
           h("td", { "data-col": "what" },
             h("span", { class: "feed__action", text: String(d.action || "unknown") }),
+            isNew ? stamp("solid", "New", "stamp--new stamp--thunk") : null,
             h("span", { class: "feed__resource", title: String(d.resource || ""), text: String(d.resource || "") })),
           h("td", { "data-col": "role" }, h("span", { class: "feed__role", text: String(d.role_name || "") })),
-          h("td", { "data-col": "status" }, tag(kind, text)),
-          h("td", { "data-col": "seen", class: "feed__num" }, seenN + (seenN === 1 ? " time" : " times")),
+          h("td", { "data-col": "status" }, stamp(kind, text)),
+          h("td", { "data-col": "seen", class: "feed__num num" }, seenN + (seenN === 1 ? " time" : " times")),
           h("td", { "data-col": "time", class: "feed__time" },
             last != null ? h("time", { datetime: new Date(last).toISOString(), "data-ts": String(last), title: (first != null ? "First seen " + new Date(first).toLocaleString() + ". " : "") + "Last seen " + new Date(last).toLocaleString() }, relTime(last, now)) : "unknown"),
           h("td", { "data-col": "pr" }, pr)));
@@ -1609,7 +1587,7 @@
       clear(box).appendChild(h("table", { class: "feed-table" },
         h("caption", { class: "visually-hidden", text: "Recent denials in the demo account, newest first" }),
         h("thead", null, h("tr", null,
-          ["Denied action", "Role", "Status", "Seen", "Last seen", "Pull request"].map((c) => h("th", { scope: "col", text: c })))),
+          ["Denied action", "Role", "Status", "Seen", "Last seen", "Pull request"].map((c) => h("th", { scope: "col", class: c === "Seen" ? "num" : null, text: c })))),
         tbody));
     }
 

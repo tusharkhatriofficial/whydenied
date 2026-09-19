@@ -3,16 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https: http://localhost:* http://127.0.0.1:*; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self' https: http://localhost:* http://127.0.0.1:*; base-uri 'none'; form-action 'none'">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>WhyDenied: AccessDenied errors to reviewed pull requests</title>
   <meta name="description" content="WhyDenied watches CloudTrail for AWS AccessDenied errors and opens a pull request against your Terraform that grants exactly the missing permission. Self-hosted, reviewed by a human.">
   <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
   <meta property="og:title" content="WhyDenied">
   <meta property="og:description" content="Turn AWS AccessDenied errors into reviewed pull requests.">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23bc4c00'/%3E%3Ccircle cx='11' cy='10' r='3' fill='none' stroke='white' stroke-width='2.4'/%3E%3Ccircle cx='11' cy='22' r='3' fill='none' stroke='white' stroke-width='2.4'/%3E%3Ccircle cx='21' cy='22' r='3' fill='none' stroke='white' stroke-width='2.4'/%3E%3Cpath d='M11 13v6M21 19v-6a3 3 0 0 0-3-3h-3' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="fonts/IBMPlexSerif-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/IBMPlexMono-400.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="styles.css">
   <script src="config.js"></script>
   <script src="app.js" defer></script>
@@ -20,102 +22,121 @@
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
 
-  <div class="demo-banner" id="demo-banner" hidden>
-    <div class="wrap demo-banner__inner">
-      <span class="tag tag--attention">Demo mode</span>
-      <span>No API is configured, so this page uses built-in sample responses that follow the API contract.<span class="demo-banner__more"> GitHub requests in step 2 are real.</span></span>
+  <div class="docstrip">
+    <div class="page docstrip__inner">
+      <span>Doc WD-001 &middot; Rev 0.1 &middot; Self-hosted on AWS</span>
+      <span class="hide-sm">Distribution: public &middot; Status: released</span>
     </div>
   </div>
 
-  <header class="site-header">
-    <div class="wrap site-header__inner">
-      <a class="wordmark" href="#top" aria-label="WhyDenied, back to top">
-        <svg class="wordmark__mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
-          <rect width="32" height="32" rx="8"/>
-          <circle cx="11" cy="10" r="3"/><circle cx="11" cy="22" r="3"/><circle cx="21" cy="22" r="3"/>
-          <path d="M11 13v6M21 19v-6a3 3 0 0 0-3-3h-3"/>
-        </svg>
-        <span>WhyDenied</span>
-      </a>
-      <nav class="site-nav" aria-label="Primary">
-        <a class="site-nav__link hide-sm" href="#how">How it works</a>
-        <a class="site-nav__link hide-sm" href="#setup">Setup</a>
-        <a class="site-nav__link hide-sm" href="#live">Live</a>
-        <a class="site-nav__link site-nav__icon" href="https://github.com/tusharkhatriofficial/whydenied" rel="noopener">
-          <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-          <span>GitHub</span>
-        </a>
-        <a class="btn btn--secondary btn--sm" href="https://github.com/tusharkhatriofficial/whydenied-demo-infra/pull/1" rel="noopener">Example PR</a>
+  <header class="masthead">
+    <div class="page masthead__inner">
+      <a class="wordmark" href="#top" aria-label="WhyDenied, back to top"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path d="M17 1H1V31H31V15" stroke-width="2"/><path d="M10 12V8H22V16H16V18" stroke-width="4"/><rect x="14" y="22" width="4" height="4"/></svg><span>WhyDenied</span><span class="wordmark__ver">v0.1</span></a>
+      <nav class="nav" aria-label="Primary">
+        <a class="nav__link hide-sm" href="#how">How it works</a>
+        <a class="nav__link hide-sm" href="#setup">Setup</a>
+        <a class="nav__link hide-sm" href="#live">Ledger</a>
+        <a class="nav__link hide-md" href="#safety">Safety</a>
+        <a class="nav__link" href="https://github.com/tusharkhatriofficial/whydenied" rel="noopener">GitHub<span aria-hidden="true"> &#8599;</span></a>
+        <a class="nav__link nav__link--box" href="https://github.com/tusharkhatriofficial/whydenied-demo-infra/pull/1" rel="noopener">Example PR<span aria-hidden="true"> &#8599;</span></a>
       </nav>
     </div>
   </header>
 
+  <div class="notice" id="demo-banner" hidden>
+    <div class="page notice__inner">
+      <span class="notice__label">Notice</span>
+      <span><mark class="hl">Demo mode.</mark> No API is configured, so this page uses built-in sample responses that follow the API contract.<span class="notice__more"> GitHub requests in step 2 are real.</span></span>
+    </div>
+  </div>
+
   <main id="main">
-    <!-- Hero -->
-    <section class="hero" id="top" aria-labelledby="hero-title">
-      <div class="hero__grid-bg" aria-hidden="true"></div>
-      <div class="wrap hero__inner">
-        <div class="hero__copy">
-          <p class="eyebrow"><span class="dot dot--live" aria-hidden="true"></span> Self-hosted in your AWS account</p>
-          <h1 id="hero-title">Turn AWS AccessDenied errors into reviewed pull requests.</h1>
-          <p class="lede">WhyDenied watches CloudTrail, works out the one permission a role is missing, and opens a pull request against your Terraform that grants exactly that. A human reviews and merges; nothing touches IAM directly.</p>
-          <div class="hero__actions">
-            <a class="btn btn--primary btn--lg" href="#setup" data-scroll>
-              Set it up in three steps
-              <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 3v10M3.5 8.5 8 13l4.5-4.5"/></svg>
-            </a>
-            <a class="btn btn--ghost btn--lg" href="https://github.com/tusharkhatriofficial/whydenied-demo-infra/pull/1" rel="noopener">See a real fix PR</a>
-          </div>
-          <ul class="hero__meta" aria-label="Highlights">
-            <li>Fix generated by code, not AI</li>
-            <li>One action, one resource</li>
-            <li>Open source</li>
-          </ul>
+    <!-- Title page -->
+    <section class="sec sec--title" id="top" aria-labelledby="hero-title">
+      <div class="page grid">
+        <aside class="margin" aria-label="Document information">
+          <dl class="docmeta">
+            <div><dt>Document</dt><dd>WD-001</dd></div>
+            <div><dt>Subject</dt><dd>IAM denials</dd></div>
+            <div><dt>Scope</dt><dd>One action, one resource</dd></div>
+            <div><dt>Approval</dt><dd>Human, by merge</dd></div>
+          </dl>
+        </aside>
+
+        <div class="title__head">
+          <p class="label">Overview</p>
+          <h1 id="hero-title">Turn AWS <em class="t-denied">AccessDenied</em> errors into reviewed pull requests.</h1>
         </div>
 
-        <div class="hero__visual" aria-label="Example: an AccessDenied error becomes a pull request" role="img">
-          <div class="mock mock--term" aria-hidden="true">
-            <div class="mock__bar"><span class="mock__dots"><i></i><i></i><i></i></span><span class="mock__title">orders-api &middot; Lambda logs</span></div>
-            <pre class="mock__body"><span class="t-muted">15:32:54</span> <span class="t-danger">[ERROR] AccessDeniedException</span>
-User: arn:aws:sts::123456789012:assumed-role/
-  <span class="t-strong">orders-api-role</span>/orders-api is not authorized to
-  perform: <span class="t-strong">ssm:GetParameter</span> on resource:
-  arn:aws:ssm:us-east-1:123456789012:parameter/
-  demo/orders-api/db-url because no identity-based
-  policy allows the ssm:GetParameter action</pre>
+        <div class="title__copy">
+          <p class="lead">WhyDenied watches CloudTrail, works out the one permission a role is missing, and opens a pull request against your Terraform that grants exactly that. A human reviews and merges; nothing touches IAM directly.</p>
+          <div class="actions">
+            <a class="btn btn--primary" href="#setup" data-scroll>Set it up in three steps <span aria-hidden="true">&#8595;</span></a>
+            <a class="btn" href="https://github.com/tusharkhatriofficial/whydenied-demo-infra/pull/1" rel="noopener">See a real fix PR <span aria-hidden="true">&#8599;</span></a>
           </div>
-          <div class="hero__connector" aria-hidden="true">
-            <span class="hero__connector-line"></span>
-            <span class="hero__connector-label">WhyDenied, 30 seconds later</span>
-          </div>
-          <div class="mock mock--pr" aria-hidden="true">
-            <div class="mock__pr-head">
-              <span class="state-pill"><svg viewBox="0 0 16 16"><circle cx="4" cy="3.5" r="1.8"/><circle cx="4" cy="12.5" r="1.8"/><circle cx="12" cy="12.5" r="1.8"/><path d="M4 5.3v5.4M12 10.7V6.5a2 2 0 0 0-2-2H8"/></svg>Open</span>
-              <span class="mock__pr-title">WhyDenied: allow ssm:GetParameter for orders-api-role <span class="t-muted">#1</span></span>
-            </div>
-            <div class="mock__file"><span class="t-success">+</span> infra/whydenied_ssm_getparameter_1017af.tf</div>
-            <pre class="mock__diff"><span class="diff-add">+ resource "aws_iam_role_policy" "whydenied_ssm_getparameter_1017af" {</span><span class="diff-add">+   role = aws_iam_role.orders_api.name</span><span class="diff-add">+   ...</span><span class="diff-add">+       Action   = "ssm:GetParameter"</span><span class="diff-add">+       Resource = "arn:aws:ssm:...:parameter/demo/orders-api/db-url"</span></pre>
-            <div class="mock__pr-foot"><span class="review-dot" aria-hidden="true"></span> Review required &middot; 1 file &middot; <span class="t-success">+21</span> <span class="t-danger">&minus;0</span></div>
-          </div>
+          <table class="spec">
+            <caption class="visually-hidden">Key properties</caption>
+            <tbody>
+              <tr><th scope="row">Fix written by</th><td>Code, not AI</td></tr>
+              <tr><th scope="row">Grant size</th><td>One action on one resource</td></tr>
+              <tr><th scope="row">Runs in</th><td>Your AWS account</td></tr>
+              <tr><th scope="row">License</th><td>Open source</td></tr>
+            </tbody>
+          </table>
         </div>
+
+        <figure class="exhibit" aria-labelledby="exhibit-cap">
+          <figcaption class="visually-hidden" id="exhibit-cap">Example: a Lambda log line with an AccessDenied error, and the pull request WhyDenied opened for it about 30 seconds later.</figcaption>
+          <div aria-hidden="true">
+            <p class="figlabel"><span>Exhibit A</span> Lambda log, orders-api</p>
+            <div class="sheet sheet--log">
+              <span class="stamp stamp--solid stamp--corner">Denied</span>
+<pre>15:32:54  [ERROR] AccessDeniedException
+User: arn:aws:sts::123456789012:assumed-role/
+  orders-api-role/orders-api is not authorized
+  to perform: <mark class="hl">ssm:GetParameter</mark> on resource:
+  arn:aws:ssm:us-east-1:123456789012:parameter/
+  demo/orders-api/db-url because no identity-
+  based policy allows the ssm:GetParameter action</pre>
+            </div>
+            <div class="exhibit__arrow">
+              <span class="exhibit__line"></span>
+              <span class="exhibit__note">WhyDenied, 30 s later</span>
+            </div>
+            <p class="figlabel"><span>Exhibit B</span> Pull request #1</p>
+            <div class="sheet sheet--pr">
+              <span class="stamp stamp--outline stamp--corner">PR open</span>
+              <p class="sheet__title">WhyDenied: allow ssm:GetParameter for orders-api-role</p>
+              <p class="sheet__meta">1 file changed &middot; <span class="t-plus">+21</span> &middot; approval required</p>
+<pre class="diff"><span class="d-file">infra/whydenied_ssm_getparameter_1017af.tf</span>
+<span class="d-add"><b>+</b> resource "aws_iam_role_policy" "whydenied_..." {</span>
+<span class="d-add"><b>+</b>   role = aws_iam_role.orders_api.name</span>
+<span class="d-add"><b>+</b>       Action   = <mark class="hl">"ssm:GetParameter"</mark></span>
+<span class="d-add"><b>+</b>       Resource = "arn:aws:ssm:...:parameter/demo/orders-api/db-url"</span></pre>
+            </div>
+            <p class="mnote mnote--exhibit">Inverted: the permission that was denied, and the one permission granted.</p>
+          </div>
+        </figure>
       </div>
     </section>
 
-    <!-- How it works -->
-    <section class="section" id="how" aria-labelledby="how-title">
-      <div class="wrap">
-        <div class="section__head">
-          <p class="eyebrow">How it works</p>
+    <!-- 01 How it works -->
+    <section class="sec" id="how" aria-labelledby="how-title">
+      <div class="page grid">
+        <aside class="margin">
+          <p class="secnum">&sect; 01</p>
+          <p class="mnote">Select any box to inspect the artefact it produces.</p>
+        </aside>
+        <div class="body">
+          <p class="label">How it works</p>
           <h2 id="how-title">From a denied call to a merged fix</h2>
-          <p class="section__lede">Every stage runs in your account or your own integrations. Select any stage to see the real artefact it produces, traced from one captured CloudTrail event.</p>
+          <p class="lead lead--sm">Every stage runs in your account or your own integrations. Each figure below is traced from one real captured CloudTrail event.</p>
         </div>
 
-        <div class="arch-card">
-          <div class="arch-card__toolbar">
-            <span class="arch-card__hint">Select a stage</span>
-            <button type="button" class="btn btn--ghost btn--sm" id="arch-toggle" aria-pressed="false">
-              <svg class="icon-pause" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M5.5 3.5v9M10.5 3.5v9"/></svg>
-              <svg class="icon-play" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M5 3.2v9.6L12.5 8z"/></svg>
+        <div class="figure body--wide">
+          <div class="figure__bar">
+            <p class="figlabel"><span>Fig. 1</span> System overview</p>
+            <button type="button" class="btn btn--sm" id="arch-toggle" aria-pressed="false">
               <span class="arch-toggle__label">Pause animation</span>
             </button>
           </div>
@@ -124,162 +145,148 @@ User: arn:aws:sts::123456789012:assumed-role/
               <title id="arch-t">WhyDenied architecture</title>
               <desc id="arch-d">A denied API call is recorded by CloudTrail, matched by an EventBridge rule and analysed by a Lambda function that stores it in DynamoDB, opens a fix pull request on GitHub, requests review notes from an AI model and alerts Slack or Discord. After the pull request is merged and applied, the workload succeeds. Each stage is a button that shows its artefact below.</desc>
               <defs>
-                <marker id="a-flow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head-flow" d="M0,0 L10,5 L0,10 z"/></marker>
-                <marker id="a-deny" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="head-deny" d="M0,0 L10,5 L0,10 z"/></marker>
-                <marker id="a-fix" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="head-fix" d="M0,0 L10,5 L0,10 z"/></marker>
+                <marker id="a-flow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head-flow" d="M0,1 L10,5 L0,9 z"/></marker>
+                <marker id="a-deny" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><path class="head-deny" d="M0,1 L10,5 L0,9 z"/></marker>
+                <marker id="a-fix" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="head-fix" d="M0,1 L10,5 L0,9 z"/></marker>
               </defs>
 
-              <!-- zones -->
-              <rect class="zone" x="16" y="20" width="652" height="290" rx="12"/>
-              <text class="zone-label" x="34" y="44">YOUR AWS ACCOUNT</text>
-              <rect class="zone" x="700" y="20" width="294" height="290" rx="12"/>
-              <text class="zone-label" x="718" y="44">INTEGRATIONS</text>
+              <rect class="zone" x="16" y="20" width="652" height="290"/>
+              <text class="zone-label" x="30" y="40">A. YOUR AWS ACCOUNT</text>
+              <rect class="zone" x="700" y="20" width="294" height="290"/>
+              <text class="zone-label" x="714" y="40">B. INTEGRATIONS</text>
 
-              <!-- edges (drawn under the cards) -->
               <path class="edge-deny" id="e-deny" d="M170,150 L194,150" marker-end="url(#a-deny)"/>
-              <text class="lbl-deny" x="182" y="101" text-anchor="middle">AccessDenied</text>
-              <path class="edge-deny" d="M182,104 L182,146" stroke-dasharray="2 3"/>
+              <text class="lbl-deny" x="182" y="98" text-anchor="middle">AccessDenied</text>
+              <path class="edge-deny edge-deny--tick" d="M182,103 L182,146"/>
               <path class="edge" id="e-ct" d="M330,150 L354,150" marker-end="url(#a-flow)"/>
               <path class="edge" id="e-eb" d="M490,150 L514,150" marker-end="url(#a-flow)"/>
               <path class="edge" id="e-db" d="M583,190 L583,226" marker-end="url(#a-flow)" marker-start="url(#a-flow)"/>
               <path class="edge" id="e-gh" d="M650,142 C680,142 690,95 718,95" marker-end="url(#a-flow)"/>
               <path class="edge" id="e-ai" d="M650,150 C685,150 690,179 718,179" marker-end="url(#a-flow)"/>
               <path class="edge" id="e-nt" d="M650,160 C680,160 690,263 718,263" marker-end="url(#a-flow)"/>
-              <path class="edge-fix" id="e-loop" d="M974,95 L988,95 Q996,95 996,103 L996,338 Q996,350 984,350 L115,350 Q103,350 103,338 L103,194" marker-end="url(#a-fix)"/>
+              <path class="edge-fix" id="e-loop" d="M974,95 L996,95 L996,350 L103,350 L103,194" marker-end="url(#a-fix)"/>
 
-              <!-- 1 workload -->
               <g class="node" data-stage="workload" tabindex="0" role="button" aria-label="Stage 1, Workload">
-                <rect class="card" x="36" y="110" width="134" height="80" rx="9"/>
-                <circle class="badge" cx="52" cy="128" r="9"/><text class="badge-text" x="52" y="131.5" text-anchor="middle">1</text>
-                <text class="title" x="68" y="133">Workload</text>
-                <text class="sub" x="50" y="156">Lambda, containers,</text>
-                <text class="sub" x="50" y="172">CI jobs, scripts</text>
+                <rect class="card" x="36" y="110" width="134" height="80"/>
+                <circle class="num" cx="51" cy="126" r="8"/><text class="num-text" x="51" y="129.5" text-anchor="middle">1</text>
+                <text class="title" x="65" y="131">Workload</text>
+                <text class="sub" x="47" y="156">Lambda, containers,</text>
+                <text class="sub" x="47" y="171">CI jobs, scripts</text>
               </g>
-
-              <!-- 2 cloudtrail -->
               <g class="node" data-stage="cloudtrail" tabindex="0" role="button" aria-label="Stage 2, CloudTrail">
-                <rect class="card" x="196" y="110" width="134" height="80" rx="9"/>
-                <circle class="badge" cx="212" cy="128" r="9"/><text class="badge-text" x="212" y="131.5" text-anchor="middle">2</text>
-                <text class="title" x="228" y="133">CloudTrail</text>
-                <text class="sub" x="210" y="156">records every call,</text>
-                <text class="sub" x="210" y="172">including denials</text>
+                <rect class="card" x="196" y="110" width="134" height="80"/>
+                <circle class="num" cx="211" cy="126" r="8"/><text class="num-text" x="211" y="129.5" text-anchor="middle">2</text>
+                <text class="title" x="225" y="131">CloudTrail</text>
+                <text class="sub" x="207" y="156">records every call,</text>
+                <text class="sub" x="207" y="171">including denials</text>
               </g>
-
-              <!-- 3 eventbridge -->
               <g class="node" data-stage="eventbridge" tabindex="0" role="button" aria-label="Stage 3, EventBridge">
-                <rect class="card" x="356" y="110" width="134" height="80" rx="9"/>
-                <circle class="badge" cx="372" cy="128" r="9"/><text class="badge-text" x="372" y="131.5" text-anchor="middle">3</text>
-                <text class="title" x="388" y="133">EventBridge</text>
-                <text class="sub mono" x="370" y="156">errorCode =</text>
-                <text class="sub mono" x="370" y="172">AccessDenied*</text>
+                <rect class="card" x="356" y="110" width="134" height="80"/>
+                <circle class="num" cx="371" cy="126" r="8"/><text class="num-text" x="371" y="129.5" text-anchor="middle">3</text>
+                <text class="title" x="385" y="131">EventBridge</text>
+                <text class="sub" x="367" y="156">errorCode =</text>
+                <text class="sub" x="367" y="171">AccessDenied*</text>
               </g>
-
-              <!-- 4 analyzer -->
-              <g class="node" data-stage="analyzer" tabindex="0" role="button" aria-label="Stage 4, Analyzer">
-                <rect class="card-key" x="516" y="110" width="134" height="80" rx="9"/>
-                <circle class="badge" cx="532" cy="128" r="9"/><text class="badge-text" x="532" y="131.5" text-anchor="middle">4</text>
-                <text class="title" x="548" y="133">Analyzer</text>
-                <text class="sub" x="530" y="156">parse, deduplicate,</text>
-                <text class="sub" x="530" y="172">generate exact fix</text>
+              <g class="node node--key" data-stage="analyzer" tabindex="0" role="button" aria-label="Stage 4, Analyzer">
+                <rect class="card" x="516" y="110" width="134" height="80"/>
+                <circle class="num" cx="531" cy="126" r="8"/><text class="num-text" x="531" y="129.5" text-anchor="middle">4</text>
+                <text class="title" x="545" y="131">Analyzer</text>
+                <text class="sub" x="527" y="156">parse, deduplicate,</text>
+                <text class="sub" x="527" y="171">generate exact fix</text>
               </g>
-
-              <!-- dynamodb -->
               <g class="node" data-stage="dynamodb" tabindex="0" role="button" aria-label="DynamoDB record">
-                <rect class="card" x="516" y="228" width="134" height="58" rx="9"/>
-                <text class="title" x="530" y="252">DynamoDB</text>
-                <text class="sub" x="530" y="272">count, status, PR link</text>
+                <rect class="card" x="516" y="228" width="134" height="58"/>
+                <text class="title" x="527" y="251">DynamoDB</text>
+                <text class="sub" x="527" y="272">count, status, link</text>
               </g>
-
-              <!-- integrations -->
-              <g class="node" data-stage="github" tabindex="0" role="button" aria-label="Stage 5, GitHub">
-                <rect class="card-key" x="720" y="62" width="254" height="66" rx="9"/>
-                <circle class="badge" cx="736" cy="80" r="9"/><text class="badge-text" x="736" y="83.5" text-anchor="middle">5</text>
-                <text class="title" x="752" y="85">GitHub</text>
-                <text class="sub" x="734" y="110">branch, policy file, pull request</text>
+              <g class="node node--key" data-stage="github" tabindex="0" role="button" aria-label="Stage 5, GitHub">
+                <rect class="card" x="720" y="62" width="254" height="66"/>
+                <circle class="num" cx="735" cy="80" r="8"/><text class="num-text" x="735" y="83.5" text-anchor="middle">5</text>
+                <text class="title" x="749" y="85">GitHub</text>
+                <text class="sub" x="731" y="111">branch, policy file, pull request</text>
               </g>
-
               <g class="node" data-stage="ai" tabindex="0" role="button" aria-label="OpenAI or Bedrock review notes">
-                <rect class="card" x="720" y="146" width="254" height="66" rx="9"/>
-                <text class="title" x="734" y="170">OpenAI or Bedrock</text>
-                <text class="sub" x="734" y="194">review notes only, never the fix</text>
+                <rect class="card" x="720" y="146" width="254" height="66"/>
+                <text class="title" x="731" y="170">OpenAI or Bedrock</text>
+                <text class="sub" x="731" y="195">review notes only, never the fix</text>
               </g>
-
               <g class="node" data-stage="notify" tabindex="0" role="button" aria-label="Slack and Discord alerts">
-                <rect class="card" x="720" y="230" width="254" height="66" rx="9"/>
-                <text class="title" x="734" y="254">Slack, Discord</text>
-                <text class="sub" x="734" y="278">alert with a link to the PR</text>
+                <rect class="card" x="720" y="230" width="254" height="66"/>
+                <text class="title" x="731" y="254">Slack, Discord</text>
+                <text class="sub" x="731" y="279">alert with a link to the PR</text>
               </g>
 
-              <!-- the loop back -->
               <g class="node node--pill" data-stage="review" tabindex="0" role="button" aria-label="Stage 6, Review and merge">
-                <rect class="pill" x="786" y="337" width="136" height="26" rx="13"/>
-                <text class="pill-text" x="854" y="354" text-anchor="middle">6  Review and merge</text>
+                <rect class="pill" x="786" y="337" width="136" height="26"/>
+                <text class="pill-text" x="854" y="354" text-anchor="middle">6  REVIEW, MERGE</text>
               </g>
               <g class="node node--pill" data-stage="apply" tabindex="0" role="button" aria-label="Stage 7, terraform apply">
-                <rect class="pill" x="492" y="337" width="136" height="26" rx="13"/>
-                <text class="pill-text" x="560" y="354" text-anchor="middle">7  terraform apply</text>
+                <rect class="pill" x="492" y="337" width="136" height="26"/>
+                <text class="pill-text" x="560" y="354" text-anchor="middle">7  TERRAFORM APPLY</text>
               </g>
               <g class="node node--pill" data-stage="success" tabindex="0" role="button" aria-label="Stage 8, Role gains one exact permission">
-                <rect class="pill" x="170" y="337" width="236" height="26" rx="13"/>
-                <text class="pill-text" x="288" y="354" text-anchor="middle">8  Role gains one exact permission</text>
+                <rect class="pill" x="170" y="337" width="236" height="26"/>
+                <text class="pill-text" x="288" y="354" text-anchor="middle">8  ROLE GAINS ONE PERMISSION</text>
               </g>
 
               <g id="arch-pulses" aria-hidden="true"></g>
 
-              <text class="lbl" x="505" y="388" text-anchor="middle">Nothing reaches IAM without a reviewed merge.</text>
+              <text class="caption" x="505" y="390" text-anchor="middle">Nothing reaches IAM without a reviewed merge.</text>
             </svg>
           </div>
+          <p class="arch-hint-sm" aria-hidden="true">Scroll the figure sideways, or use the arrows below.</p>
 
-          <p class="arch-hint-sm" aria-hidden="true">Scroll the diagram sideways, or use the arrows below.</p>
-          <div class="stage-panel" id="stage-panel" aria-live="polite">
-            <div class="stage-panel__head">
-              <div>
-                <p class="stage-panel__kicker" id="stage-kicker"></p>
-                <h3 class="stage-panel__title" id="stage-title"></h3>
-                <p class="stage-panel__desc" id="stage-desc"></p>
-              </div>
-              <div class="stage-panel__nav">
-                <button type="button" class="btn btn--icon" id="stage-prev" aria-label="Previous stage"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M10 3.5 5.5 8l4.5 4.5"/></svg></button>
-                <span class="stage-panel__count" id="stage-count"></span>
-                <button type="button" class="btn btn--icon" id="stage-next" aria-label="Next stage"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M6 3.5 10.5 8 6 12.5"/></svg></button>
+          <div class="stage" id="stage-panel" aria-live="polite">
+            <div class="stage__side">
+              <p class="stage__fig" id="stage-kicker"></p>
+              <div class="stage__nav">
+                <button type="button" class="btn btn--sm btn--sq" id="stage-prev" aria-label="Previous stage"><span aria-hidden="true">&#8592;</span></button>
+                <span class="stage__count" id="stage-count"></span>
+                <button type="button" class="btn btn--sm btn--sq" id="stage-next" aria-label="Next stage"><span aria-hidden="true">&#8594;</span></button>
               </div>
             </div>
-            <div class="stage-panel__body" id="stage-body"></div>
+            <div class="stage__main">
+              <h3 class="stage__title" id="stage-title"></h3>
+              <p class="stage__desc" id="stage-desc"></p>
+              <div class="stage__body" id="stage-body"></div>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Setup -->
-    <section class="section section--tint" id="setup" aria-labelledby="setup-title">
-      <div class="wrap">
-        <div class="section__head">
-          <p class="eyebrow">Setup</p>
-          <h2 id="setup-title">Try it, check your repo, deploy</h2>
-          <p class="section__lede">Steps 1 and 2 run from this page with nothing installed. Step 3 deploys WhyDenied into your own AWS account.</p>
+    <!-- 02 Setup -->
+    <section class="sec" id="setup" aria-labelledby="setup-title">
+      <div class="page grid">
+        <aside class="margin">
+          <p class="secnum">&sect; 02</p>
+          <p class="mnote">Steps 1 and 2 run in your browser. Nothing is stored.</p>
+        </aside>
+        <div class="body">
+          <p class="label">Setup</p>
+          <h2 id="setup-title">Try it, check your repository, deploy</h2>
+          <p class="lead lead--sm">Steps 1 and 2 run from this page with nothing installed. Step 3 deploys WhyDenied into your own AWS account.</p>
         </div>
 
-        <ol class="steps">
+        <ol class="steps body--wide">
           <!-- Step 1 -->
           <li class="step" id="step-try" aria-labelledby="step1-title">
-            <div class="step__rail" aria-hidden="true"><span class="step__num">1</span></div>
-            <div class="step__card">
-              <div class="step__head">
-                <h3 id="step1-title">Try it</h3>
-                <p>Paste an AccessDenied error from a log, a terminal or a CI run. WhyDenied parses it and writes the Terraform it would propose.</p>
-              </div>
+            <p class="step__no" aria-hidden="true">Step 1 of 3</p>
+            <div class="step__body">
+              <h3 id="step1-title"><span class="visually-hidden">Step 1: </span>Try it</h3>
+              <p class="step__intro">Paste an AccessDenied error from a log, a terminal or a CI run. WhyDenied parses it and writes the Terraform it would propose.</p>
               <form id="try-form" class="form" novalidate>
                 <div class="field">
-                  <div class="field__labelrow">
+                  <div class="field__row">
                     <label for="try-input">AccessDenied error message</label>
                     <span class="field__count" id="try-count" aria-live="off">0 / 4000</span>
                   </div>
-                  <textarea id="try-input" class="input input--mono" rows="5" maxlength="4000" spellcheck="false" autocomplete="off" placeholder="An error occurred (AccessDeniedException) when calling the GetParameter operation: User: arn:aws:sts::123456789012:assumed-role/... is not authorized to perform: ..." aria-describedby="try-help"></textarea>
+                  <textarea id="try-input" class="input" rows="5" maxlength="4000" spellcheck="false" autocomplete="off" placeholder="An error occurred (AccessDeniedException) when calling the GetParameter operation: User: arn:aws:sts::123456789012:assumed-role/... is not authorized to perform: ..." aria-describedby="try-help"></textarea>
                   <p class="field__help" id="try-help">The message can include surrounding text. Nothing is stored.</p>
                 </div>
                 <div class="form__actions">
                   <button type="submit" class="btn btn--primary" id="try-submit">Explain and fix</button>
-                  <button type="button" class="btn btn--secondary" id="try-example">Use an example</button>
+                  <button type="button" class="btn" id="try-example">Use an example</button>
                   <span class="form__aside" id="try-example-label" aria-live="polite"></span>
                 </div>
               </form>
@@ -289,18 +296,16 @@ User: arn:aws:sts::123456789012:assumed-role/
 
           <!-- Step 2 -->
           <li class="step" id="step-check" aria-labelledby="step2-title">
-            <div class="step__rail" aria-hidden="true"><span class="step__num">2</span></div>
-            <div class="step__card">
-              <div class="step__head">
-                <h3 id="step2-title">Check your Terraform</h3>
-                <p>WhyDenied matches a denial to the <code>aws_iam_role</code> with the same explicit <code>name</code>. Check which roles in a public repository it can fix today.</p>
-              </div>
+            <p class="step__no" aria-hidden="true">Step 2 of 3</p>
+            <div class="step__body">
+              <h3 id="step2-title"><span class="visually-hidden">Step 2: </span>Check your Terraform</h3>
+              <p class="step__intro">WhyDenied matches a denial to the <code>aws_iam_role</code> with the same explicit <code>name</code>. Check which roles in a public repository it can fix today.</p>
               <form id="check-form" class="form" novalidate>
                 <div class="field">
                   <label for="check-input">Public GitHub repository</label>
                   <div class="input-group">
                     <span class="input-group__prefix" aria-hidden="true">github.com/</span>
-                    <input id="check-input" class="input input--mono" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="owner/name" aria-describedby="check-help">
+                    <input id="check-input" class="input" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="owner/name" aria-describedby="check-help">
                   </div>
                   <p class="field__help" id="check-help">Accepts <code>owner/name</code> or a full GitHub URL. Files are read in your browser from the default branch, up to 200 <code>.tf</code> files. <button type="button" class="link-btn" id="check-demo">Use the demo repository</button></p>
                 </div>
@@ -315,24 +320,22 @@ User: arn:aws:sts::123456789012:assumed-role/
 
           <!-- Step 3 -->
           <li class="step" id="step-deploy" aria-labelledby="step3-title">
-            <div class="step__rail" aria-hidden="true"><span class="step__num">3</span></div>
-            <div class="step__card">
-              <div class="step__head">
-                <h3 id="step3-title">Deploy to your AWS account</h3>
-                <p>Choose your options, launch the stack, then store the secrets it reads. You need a CloudTrail trail recording management events in <code>us-east-1</code>.</p>
-              </div>
-              <form id="deploy-form" class="form deploy-form" novalidate>
-                <div class="field">
+            <p class="step__no" aria-hidden="true">Step 3 of 3</p>
+            <div class="step__body">
+              <h3 id="step3-title"><span class="visually-hidden">Step 3: </span>Deploy to your AWS account</h3>
+              <p class="step__intro">Choose your options, launch the stack, then store the secrets it reads. You need a CloudTrail trail recording management events in <code>us-east-1</code>.</p>
+              <form id="deploy-form" class="form form--deploy" novalidate>
+                <div class="field field--repo">
                   <label for="deploy-repo">Terraform repository</label>
-                  <input id="deploy-repo" class="input input--mono" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="owner/name" aria-describedby="deploy-repo-help">
+                  <input id="deploy-repo" class="input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="owner/name" aria-describedby="deploy-repo-help">
                   <p class="field__help" id="deploy-repo-help">Fix pull requests are opened here. It can be private.</p>
                 </div>
                 <fieldset class="field">
                   <legend>AI review notes</legend>
-                  <div class="segmented" role="radiogroup" aria-label="AI provider">
-                    <label class="segmented__opt"><input type="radio" name="provider" value="openai" checked><span>OpenAI</span></label>
-                    <label class="segmented__opt"><input type="radio" name="provider" value="bedrock"><span>Amazon Bedrock</span></label>
-                    <label class="segmented__opt"><input type="radio" name="provider" value="none"><span>None</span></label>
+                  <div class="choice" role="radiogroup" aria-label="AI provider">
+                    <label class="choice__opt"><input type="radio" name="provider" value="openai" checked><span>OpenAI</span></label>
+                    <label class="choice__opt"><input type="radio" name="provider" value="bedrock"><span>Amazon Bedrock</span></label>
+                    <label class="choice__opt"><input type="radio" name="provider" value="none"><span>None</span></label>
                   </div>
                   <p class="field__help" id="provider-help">The model writes review notes only. The fix is always generated by code.</p>
                 </fieldset>
@@ -345,31 +348,37 @@ User: arn:aws:sts::123456789012:assumed-role/
                 </fieldset>
               </form>
 
-              <div class="deploy-out">
-                <div class="deploy-out__block">
-                  <h4><span class="mini-num">a</span> Launch the stack</h4>
-                  <p class="muted">Opens the CloudFormation console in <code>us-east-1</code> with your options filled in. Review and create.</p>
-                  <div class="launch-row">
-                    <a class="btn btn--primary btn--aws" id="launch-btn" href="#" rel="noopener" aria-disabled="true">
-                      <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3 11.5 8 14l5-2.5M3 8l5 2.5L13 8M8 2 3 4.5 8 7l5-2.5z"/></svg>
-                      Launch in AWS
-                    </a>
-                    <span class="form__aside" id="launch-note"></span>
+              <div class="clauses">
+                <div class="clause">
+                  <p class="clause__no">3.1</p>
+                  <div class="clause__body">
+                    <h4>Launch the stack</h4>
+                    <p class="clause__text">Opens the CloudFormation console in <code>us-east-1</code> with your options filled in. Review and create.</p>
+                    <div class="launch-row">
+                      <a class="btn btn--primary" id="launch-btn" href="#" rel="noopener" aria-disabled="true">Launch in AWS <span aria-hidden="true">&#8599;</span></a>
+                      <span class="form__aside" id="launch-note"></span>
+                    </div>
+                    <details class="disclosure">
+                      <summary>Prefer the SAM CLI?</summary>
+                      <div class="code" data-lang="shell" id="sam-code"></div>
+                    </details>
                   </div>
-                  <details class="disclosure">
-                    <summary>Prefer the SAM CLI?</summary>
-                    <div class="code" data-lang="shell" id="sam-code"></div>
-                  </details>
                 </div>
-                <div class="deploy-out__block">
-                  <h4><span class="mini-num">b</span> Store your secrets</h4>
-                  <p class="muted">Run these with your own values. <strong>Tokens stay in your account:</strong> they go from your terminal to SSM Parameter Store and never pass through this page.</p>
-                  <div class="code" data-lang="shell" id="ssm-code"></div>
-                  <p class="field__help">The GitHub token is a <a href="https://github.com/settings/personal-access-tokens/new" rel="noopener">fine-grained personal access token</a> scoped to your Terraform repository, with Contents and Pull requests set to read and write.</p>
+                <div class="clause">
+                  <p class="clause__no">3.2</p>
+                  <div class="clause__body">
+                    <h4>Store your secrets</h4>
+                    <p class="clause__text">Run these with your own values. <strong>Tokens stay in your account:</strong> they go from your terminal to SSM Parameter Store and never pass through this page.</p>
+                    <div class="code" data-lang="shell" id="ssm-code"></div>
+                    <p class="field__help">The GitHub token is a <a href="https://github.com/settings/personal-access-tokens/new" rel="noopener">fine-grained personal access token</a> scoped to your Terraform repository, with Contents and Pull requests set to read and write.</p>
+                  </div>
                 </div>
-                <div class="deploy-out__block">
-                  <h4><span class="mini-num">c</span> Verify</h4>
-                  <p class="muted">Trigger a denial from a role defined in your repository. Within about 30 seconds a pull request titled <code>WhyDenied: allow &lt;action&gt; for &lt;role&gt;</code> appears.</p>
+                <div class="clause">
+                  <p class="clause__no">3.3</p>
+                  <div class="clause__body">
+                    <h4>Verify</h4>
+                    <p class="clause__text">Trigger a denial from a role defined in your repository. Within about 30 seconds a pull request titled <code>WhyDenied: allow &lt;action&gt; for &lt;role&gt;</code> appears.</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -378,87 +387,66 @@ User: arn:aws:sts::123456789012:assumed-role/
       </div>
     </section>
 
-    <!-- Live feed -->
-    <section class="section" id="live" aria-labelledby="live-title">
-      <div class="wrap">
-        <div class="section__head section__head--row">
+    <!-- 03 Ledger -->
+    <section class="sec" id="live" aria-labelledby="live-title">
+      <div class="page grid">
+        <aside class="margin">
+          <p class="secnum">&sect; 03</p>
+          <p class="mnote">Refreshes every 15 seconds.</p>
+        </aside>
+        <div class="body body--row">
           <div>
-            <p class="eyebrow">Live from the demo account</p>
+            <p class="label">Live from the demo account</p>
             <h2 id="live-title">Recent denials</h2>
-            <p class="section__lede">What WhyDenied has seen in its own demo AWS account, newest first. Refreshes every 15 seconds.</p>
+            <p class="lead lead--sm">What WhyDenied has seen in its own demo AWS account, newest first.</p>
           </div>
           <div class="feed-status">
             <span class="feed-status__state" id="feed-state"><span class="dot" aria-hidden="true"></span><span id="feed-state-text">Connecting</span></span>
             <span class="feed-status__time" id="feed-updated"></span>
-            <button type="button" class="btn btn--secondary btn--sm" id="feed-refresh">Refresh</button>
+            <button type="button" class="btn btn--sm" id="feed-refresh">Refresh</button>
           </div>
         </div>
-        <div class="feed" id="feed" aria-live="polite" aria-busy="true"></div>
+        <div class="feed body--wide" id="feed" aria-live="polite" aria-busy="true"></div>
       </div>
     </section>
 
-    <!-- Safety -->
-    <section class="section section--tint" id="safety" aria-labelledby="safety-title">
-      <div class="wrap">
-        <div class="section__head">
-          <p class="eyebrow">Safety model</p>
+    <!-- 04 Safety -->
+    <section class="sec" id="safety" aria-labelledby="safety-title">
+      <div class="page grid">
+        <aside class="margin">
+          <p class="secnum">&sect; 04</p>
+          <p class="mnote">Normative. These rules hold for every fix.</p>
+        </aside>
+        <div class="body">
+          <p class="label">Safety model</p>
           <h2 id="safety-title">Built to be merged with confidence</h2>
-          <p class="section__lede">A tool that writes IAM policy has to be conservative. These are the rules WhyDenied follows.</p>
+          <p class="lead lead--sm">A tool that writes IAM policy has to be conservative. These are the rules WhyDenied follows.</p>
         </div>
-        <ul class="safety">
-          <li class="safety__item">
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 7 3 12l5 5M16 7l5 5-5 5M14 4l-4 16"/></svg>
-            <h3>The fix is generated by code, not by AI</h3>
-            <p>The model only writes review notes, so an incorrect or manipulated response cannot widen permissions.</p>
-          </li>
-          <li class="safety__item">
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.8"/></svg>
-            <h3>Exact scope</h3>
-            <p>Each fix grants one action on one resource. Wildcard actions are refused.</p>
-          </li>
-          <li class="safety__item">
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6z"/><path d="M9 12h6"/></svg>
-            <h3>Only missing Allow statements</h3>
-            <p>Explicit denies, SCPs, permissions boundaries and session policies are reported for a human to handle.</p>
-          </li>
-          <li class="safety__item">
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M6 8.5v7M18 15.5V10a3 3 0 0 0-3-3h-3.5"/><path d="m13.5 5-2 2 2 2"/></svg>
-            <h3>Human approval</h3>
-            <p>Changes arrive as pull requests. Nothing is applied without a merge.</p>
-          </li>
-          <li class="safety__item">
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M7.5 10 10 12l-2.5 2M12.5 14.5h4"/></svg>
-            <h3>Untrusted input</h3>
-            <p>Event data reaches the model as delimited data, and its output is validated and stripped of markup before it reaches a pull request.</p>
-          </li>
-          <li class="safety__item">
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0v3"/></svg>
-            <h3>Least privilege for WhyDenied itself</h3>
-            <p>The analyzer reads only SSM parameters under <code>/whydenied/</code> and writes only to its own table.</p>
-          </li>
-        </ul>
+        <ol class="safety body--wide">
+          <li class="safety__item"><span class="safety__no">S1</span><div><h3>The fix is generated by code, not by AI</h3><p>The model only writes review notes, so an incorrect or manipulated response cannot widen permissions.</p></div></li>
+          <li class="safety__item"><span class="safety__no">S2</span><div><h3>Exact scope</h3><p>Each fix grants one action on one resource. Wildcard actions are refused.</p></div></li>
+          <li class="safety__item"><span class="safety__no">S3</span><div><h3>Only missing Allow statements</h3><p>Explicit denies, SCPs, permissions boundaries and session policies are reported for a human to handle.</p></div></li>
+          <li class="safety__item"><span class="safety__no">S4</span><div><h3>Human approval</h3><p>Changes arrive as pull requests. Nothing is applied without a merge.</p></div></li>
+          <li class="safety__item"><span class="safety__no">S5</span><div><h3>Untrusted input</h3><p>Event data reaches the model as delimited data, and its output is validated and stripped of markup before it reaches a pull request.</p></div></li>
+          <li class="safety__item"><span class="safety__no">S6</span><div><h3>Least privilege for WhyDenied itself</h3><p>The analyzer reads only SSM parameters under <code>/whydenied/</code> and writes only to its own table.</p></div></li>
+        </ol>
       </div>
     </section>
   </main>
 
-  <footer class="site-footer">
-    <div class="wrap site-footer__inner">
-      <div class="site-footer__brand">
-        <span class="wordmark wordmark--sm">
-          <svg class="wordmark__mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
-            <rect width="32" height="32" rx="8"/>
-            <circle cx="11" cy="10" r="3"/><circle cx="11" cy="22" r="3"/><circle cx="21" cy="22" r="3"/>
-            <path d="M11 13v6M21 19v-6a3 3 0 0 0-3-3h-3"/>
-          </svg>
-          <span>WhyDenied</span>
-        </span>
-        <p>Built for First Commit, WeMakeDevs x AWS. <span class="hashtag">#FirstCommit</span></p>
+  <footer class="colophon">
+    <div class="page grid">
+      <p class="margin label">Colophon</p>
+      <div class="colophon__text">
+        <p class="colophon__brand"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path d="M17 1H1V31H31V15" stroke-width="2"/><path d="M10 12V8H22V16H16V18" stroke-width="4"/><rect x="14" y="22" width="4" height="4"/></svg><span>WhyDenied</span></p>
+        <p>Set in IBM Plex. Hosted on AWS Amplify. Built for First Commit, WeMakeDevs x AWS. <span class="hashtag">#FirstCommit</span></p>
       </div>
-      <nav class="site-footer__links" aria-label="Footer">
+      <nav class="colophon__links" aria-label="Footer">
         <a href="https://github.com/tusharkhatriofficial/whydenied" rel="noopener">GitHub</a>
         <a href="https://github.com/tusharkhatriofficial/whydenied-demo-infra/pull/1" rel="noopener">Example PR</a>
         <a href="https://github.com/tusharkhatriofficial/whydenied#readme" rel="noopener">Documentation</a>
       </nav>
+      <p class="colophon__end">End of document WD-001</p>
     </div>
   </footer>
 

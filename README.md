@@ -1,4 +1,4 @@
-# WhyDenied
+# <img src="docs/logo-wordmark.svg" alt="WhyDenied" height="44">
 
 **Turn AWS `AccessDenied` errors into reviewed pull requests against your Terraform.**
 
