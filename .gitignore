@@ -25,3 +25,6 @@ dist/
 # OS
 .DS_Store
 out.json
+
+# Web API build
+web/.aws-sam/

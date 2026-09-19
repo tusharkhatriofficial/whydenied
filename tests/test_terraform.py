@@ -6,7 +6,7 @@ import pytest
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent / "src" / "analyzer"))
 
 from parse import Denial  # noqa: E402
-from terraform import NoSafeFix, find_role, fix_filename, render_fix, role_name_from_arn  # noqa: E402
+from terraform import NoSafeFix, find_role, fix_filename, list_roles, render_fix, role_name_from_arn  # noqa: E402
 
 MAIN_TF = '''
 resource "aws_iam_role" "orders_api" {
@@ -87,3 +87,54 @@ def test_refuses_explicit_deny():
 def test_refuses_wildcard_action():
     with pytest.raises(NoSafeFix):
         render_fix(denial(action="s3:*"), None)
+
+
+def test_list_roles_reports_every_issue():
+    files = {
+        "infra/main.tf": MAIN_TF,
+        "infra/other.tf": '''
+resource "aws_iam_role" "prefixed" {
+  name_prefix = "worker-"
+}
+
+resource "aws_iam_role" "from_var" {
+  name = var.role_name
+}
+
+resource "aws_iam_role" "from_local" {
+  name = local.role_name
+}
+
+resource "aws_iam_role" "interpolated" {
+  name = "orders-${var.env}"
+}
+
+resource "aws_iam_role" "unnamed" {
+  inline_policy {
+    name = "not-the-role-name"
+  }
+}
+
+resource "aws_iam_role" "commented" {
+  name = "costs-role" # owned by finance
+}
+''',
+        "README.md": 'resource "aws_iam_role" "ignored" { name = "x" }',
+    }
+    roles = {r["address"]: r for r in list_roles(files)}
+    assert len(roles) == 8
+
+    assert roles["aws_iam_role.orders_api"] == {
+        "address": "aws_iam_role.orders_api", "name": "orders-api-role",
+        "path": "infra/main.tf", "ready": True, "issue": None,
+    }
+    assert roles["aws_iam_role.commented"]["name"] == "costs-role"
+    assert roles["aws_iam_role.commented"]["ready"] is True
+
+    assert roles["aws_iam_role.prefixed"]["issue"].startswith("Uses name_prefix.")
+    for label in ("from_var", "from_local", "interpolated"):
+        assert roles[f"aws_iam_role.{label}"]["issue"].startswith("Name comes from a variable")
+    assert roles["aws_iam_role.unnamed"]["issue"].startswith("Has no name")
+    for label in ("prefixed", "from_var", "from_local", "interpolated", "unnamed"):
+        role = roles[f"aws_iam_role.{label}"]
+        assert role["ready"] is False and role["name"] is None and role["path"] == "infra/other.tf"

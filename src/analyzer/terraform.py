@@ -9,6 +9,19 @@ from dataclasses import dataclass
 _ROLE_BLOCK_RE = re.compile(r'resource\s+"aws_iam_role"\s+"(?P<label>[\w-]+)"\s*\{')
 _NAME_RE = re.compile(r'^\s*name\s*=\s*"(?P<name>[^"]+)"', re.MULTILINE)
 
+_ANY_NAME_RE = re.compile(r'^\s*name\s*=\s*(?P<value>.*?)\s*$', re.MULTILINE)
+_NAME_PREFIX_RE = re.compile(r'^\s*name_prefix\s*=', re.MULTILINE)
+# A quoted string of IAM role name characters, optionally followed by a comment.
+# "${...}" can't match: _top_level has already reduced it to "$".
+_LITERAL_RE = re.compile(r'^"(?P<name>[\w+=,.@-]+)"\s*(?:(?:#|//).*)?$')
+
+_FIX_HINT = "so WhyDenied can match denials to this role."
+_ISSUES = {
+    "name_prefix": f"Uses name_prefix. Set an explicit name {_FIX_HINT}",
+    "expression": f"Name comes from a variable or expression. Set a literal name {_FIX_HINT}",
+    "missing": f"Has no name, so Terraform generates a random one. Set an explicit name {_FIX_HINT}",
+}
+
 
 @dataclass
 class RoleLocation:
@@ -40,6 +53,42 @@ def find_role(files, role_name):
             if name and name.group("name") == role_name:
                 return RoleLocation(path=path, address=f"aws_iam_role.{match.group('label')}")
     return None
+
+
+def list_roles(files):
+    """Every aws_iam_role in {path: content}, and whether WhyDenied can match it by name.
+
+    Returns dicts with address, name, path, ready and issue (None when ready).
+    """
+    roles = []
+    for path, content in sorted(files.items()):
+        if not path.endswith(".tf"):
+            continue
+        for match in _ROLE_BLOCK_RE.finditer(content):
+            body = _top_level(_block_body(content, match.end()))
+            name, issue = _role_name(body)
+            roles.append({
+                "address": f"aws_iam_role.{match.group('label')}",
+                "name": name,
+                "path": path,
+                "ready": issue is None,
+                "issue": issue,
+            })
+    return roles
+
+
+def _role_name(body):
+    """(name, None) for a literal name, otherwise (None, issue)."""
+    found = _ANY_NAME_RE.search(body)
+    if found:
+        literal = _LITERAL_RE.match(found.group("value"))
+        if literal:
+            return literal.group("name"), None
+        # var.x, local.x, "${...}", function calls and so on
+        return None, _ISSUES["expression"]
+    if _NAME_PREFIX_RE.search(body):
+        return None, _ISSUES["name_prefix"]
+    return None, _ISSUES["missing"]
 
 
 def fix_filename(denial):

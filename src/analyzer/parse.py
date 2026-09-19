@@ -143,3 +143,58 @@ def _reason(message):
         if phrase in message:
             return code
     return "unknown"
+
+
+# A pasted error, e.g. from botocore:
+#   "An error occurred (AccessDeniedException) when calling the GetParameter
+#    operation: User: <arn> is not authorized to perform: <action> ..."
+_PASTED_RE = re.compile(
+    r"User: (?P<principal>\S+) is not authorized to perform: (?P<action>\S+?)[.,;]?"
+    r"(?= |$)(?: on resource: (?P<resource>\S+?)[.,;]?(?= |$))?"
+)
+_ERROR_CODE_RE = re.compile(r"\((?P<code>[A-Za-z.]*(?:AccessDenied|Unauthorized)[A-Za-z.]*)\)")
+# arn:aws:sts::<account>:assumed-role/<role>/<session>
+_SESSION_RE = re.compile(r"^arn:(?P<partition>[\w-]+):sts::(?P<account>\d+):assumed-role/(?P<role>[^/]+)/")
+
+
+def parse_error_message(text):
+    """Find an AccessDenied message anywhere in text and return a Denial, or None.
+
+    Only the message is available, so region, event time and event id are empty.
+    """
+    text = " ".join((text or "").split())  # undo line wrapping from terminals
+    match = _PASTED_RE.search(text)
+    if not match:
+        return None
+
+    principal = _role_from_session(match.group("principal"))
+    action = match.group("action")
+    resource = match.group("resource") or "*"
+    # The reason belongs to this message, not to anything pasted after it.
+    message = text[match.start():]
+    end = message.find(" User: ")
+    if end > 0:
+        message = message[:end]
+    code = _ERROR_CODE_RE.search(text[:match.start()])
+
+    return Denial(
+        id=fingerprint(principal, action, resource),
+        principal_arn=principal,
+        action=action,
+        resource=resource,
+        reason=_reason(message),
+        error_code=code.group("code") if code else "AccessDenied",
+        error_message=message,
+        read_only=False,
+        region="",
+        event_time="",
+        event_id="",
+    )
+
+
+def _role_from_session(arn):
+    # The session ARN hides the role path; the role name is what matching needs.
+    m = _SESSION_RE.match(arn)
+    if not m:
+        return arn
+    return f"arn:{m.group('partition')}:iam::{m.group('account')}:role/{m.group('role')}"

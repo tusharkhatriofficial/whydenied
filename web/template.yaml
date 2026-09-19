@@ -1,0 +1,69 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: WhyDenied web - public API for the setup page (deploy as stack whydenied-web)
+
+# Kept out of the main stack so installing WhyDenied never adds public endpoints.
+
+Resources:
+  WebApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowOrigins: ["*"]
+        AllowMethods: [GET, POST, OPTIONS]
+        AllowHeaders: [content-type]
+      # Applied to each route of the default stage.
+      DefaultRouteSettings:
+        ThrottlingBurstLimit: 20
+        ThrottlingRateLimit: 10
+
+  WebFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: whydenied-web
+      CodeUri: ../src/analyzer/
+      Handler: web.handler
+      Runtime: python3.14
+      Architectures: [arm64]
+      Timeout: 10
+      MemorySize: 256
+      Environment:
+        Variables:
+          # Created by the main stack.
+          DENIALS_TABLE: whydenied-denials
+      Policies:
+        # Read-only, and only what GET /feed needs.
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:Scan
+              Resource: !Sub arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/whydenied-denials
+      Events:
+        Try:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref WebApi
+            Method: POST
+            Path: /try
+        Check:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref WebApi
+            Method: POST
+            Path: /check
+        Feed:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref WebApi
+            Method: GET
+            Path: /feed
+
+  WebLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/lambda/whydenied-web
+      RetentionInDays: 7
+
+Outputs:
+  # No trailing slash; goes into site/config.js as window.WHYDENIED_API.
+  ApiUrl:
+    Value: !Sub https://${WebApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}
