@@ -7,6 +7,7 @@ _STATUS_TEXT = {
     "pr_open": "Fix PR opened",
     "needs_human": "Needs a human: can't be fixed automatically",
     "role_not_found": "Role not found in the Terraform repo",
+    "not_a_role": "Recorded: caller is not an IAM role",
     "error": "WhyDenied hit an error opening the fix",
 }
 

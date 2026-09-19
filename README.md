@@ -1,95 +1,162 @@
 # WhyDenied
 
-**Turn an AWS `AccessDenied` into a reviewed pull request against your infrastructure code.**
+**Turn AWS `AccessDenied` errors into reviewed pull requests against your Terraform.**
 
-Built for [First Commit](https://www.wemakedevs.org/aws/first-commit) (WeMakeDevs × AWS, 17–20 September 2026).
+WhyDenied watches CloudTrail for denied API calls, works out which IAM role is missing which permission, and opens a pull request that grants exactly that permission on exactly that resource. A reviewer approves the change; WhyDenied never modifies IAM directly.
+
+Built for [First Commit](https://www.wemakedevs.org/aws/first-commit), the WeMakeDevs × AWS hackathon (17 to 20 September 2026).
+
+Example: [the pull request WhyDenied opened for the demo app](https://github.com/tusharkhatriofficial/whydenied-demo-infra/pull/1).
 
 ---
 
-## The problem
+## Why
 
-Every team building on AWS hits this:
+Least privilege is the standard for IAM, and it is rarely maintained in practice. Every new feature, renamed resource or environment difference can surface a new `AccessDenied`. Each one costs an engineer time to trace the failing call to a policy, find the Terraform that defines the role, and open a change. Under time pressure the fix often becomes a console edit that drifts from code, or a wildcard such as `"Action": "*"`.
 
-```
-User: arn:aws:sts::123456789012:assumed-role/orders-api-role/orders-api
-is not authorized to perform: s3:GetObject on resource: arn:aws:s3:::invoices/...
-```
-
-Then someone loses an hour working out which policy is responsible: the identity policy, a resource policy, a permissions boundary, or an SCP. Even after finding the missing permission, the fix still has to go somewhere:
-
-- **Fixed by hand in the console:** the live role no longer matches the Terraform code, and the next `terraform apply` quietly reverts the fix.
-- **Fixed with `"Action": "*"` to make it go away:** the role now has far more access than it needs.
-- **Fixed properly:** someone has to find the file that defines the role, edit it, open a PR and wait for review. That's slow, so it rarely happens.
-
-The errors also come from places nobody is watching, such as Lambda logs, CI runs and cron jobs, so the same one repeats hundreds of times before anyone notices.
-
-## What WhyDenied does
-
-1. **Catches** `AccessDenied` / `UnauthorizedOperation` events from CloudTrail as they happen (through EventBridge).
-2. **Groups** duplicates: 500 identical errors become one issue with a count.
-3. **Explains** which policy type blocked the request and which action is missing.
-4. **Finds** the Terraform file that defines the role.
-5. **Opens a pull request** with the smallest change that fixes it (never `*`) and a plain-English explanation.
-6. **Notifies** your team on Slack or Discord and shows everything on a dashboard.
-
-A person still reviews and merges the PR. WhyDenied never changes IAM directly.
-
-## Why not an existing tool?
-
-| Tool | What it does | What's missing |
-|---|---|---|
-| [Access Undenied](https://github.com/tenable/access-undenied-aws) (open source) | Explains CloudTrail AccessDenied events and suggests a least-privilege policy | CLI you run by hand; outputs JSON, doesn't touch your code |
-| [Diagnose with Amazon Q](https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/diagnose-console-errors.html) | Explains errors in the AWS console | Console only: doesn't see errors from Lambda, CI or scripts; keeps no history |
-| [IAM Policy Autopilot](https://aws.amazon.com/blogs/security/iam-policy-autopilot-an-open-source-tool-that-brings-iam-policy-expertise-to-builders-and-ai-coding-assistants) (AWS) | Generates policies from code for AI assistants; troubleshoots denials while you test | Works on your laptop while you code, not on errors already happening in AWS |
-| [AWSSupport-TroubleshootIAMAccessDeniedEvents](https://docs.aws.amazon.com/systems-manager-automation-runbooks/latest/userguide/awssupport-troubleshootiamaccessdeniedevents.html) | SSM runbook that queries recent denials | Run by hand; produces a report, not a fix |
-
-**The gap:** all of these stop at *"here is the policy you need"*. WhyDenied continues to *"here is the PR that adds it to your Terraform"*, and it runs all the time instead of only when someone asks.
+WhyDenied removes that work. Roles can start with minimal permissions and grow one reviewed, exact permission at a time.
 
 ## How it works
 
 ```mermaid
 flowchart LR
-  A[App / Lambda / CI] -- denied API call --> CT[CloudTrail]
-  CT --> EB[EventBridge rule<br/>errorCode = AccessDenied]
+  A[Workload] -- denied API call --> CT[CloudTrail]
+  CT --> EB[EventBridge rule]
   EB --> L[Analyzer Lambda]
-  L <--> DDB[(DynamoDB<br/>denials + dedupe)]
-  L -- policy simulation --> IAM[IAM APIs]
-  L -- find role in repo --> GH[GitHub API]
-  L -- minimal diff + explanation --> BR[Bedrock]
-  L -- open PR --> GH
-  L --> SL[Slack / Discord webhook]
-  UI[Dashboard on Amplify] --> API[API Gateway] --> DDB
+  L <--> DDB[(DynamoDB)]
+  L -- locate role, push fix --> GH[GitHub]
+  L -- review notes --> AI[OpenAI or Bedrock]
+  L --> N[Slack / Discord]
 ```
 
-## Tech stack
+1. **Capture.** An EventBridge rule receives every `AccessDenied` and `UnauthorizedOperation` event from CloudTrail, including read-only calls, which EventBridge excludes by default.
+2. **Parse.** The analyzer extracts the IAM role (not the temporary session), the action, the resource and the denial reason.
+3. **Deduplicate.** Each (role, action, resource) is stored once in DynamoDB with an occurrence count. Only the first occurrence triggers a fix.
+4. **Fix.** The analyzer finds the `aws_iam_role` in your Terraform repository and opens a pull request that adds an inline policy for the denied action and resource.
+5. **Review.** An optional AI model summarises the denial for the reviewer: whether the access looks expected, the risk of granting it, and what to verify.
+6. **Notify.** An alert with a link to the pull request is posted to Slack and/or Discord.
 
-| Part | What it uses |
+## Safety model
+
+- **The fix is generated by code, not by AI.** The model only writes review notes, so an incorrect or manipulated response cannot widen permissions.
+- **Exact scope.** Each fix grants one action on one resource. Wildcard actions are refused.
+- **Only missing `Allow` statements are fixed automatically.** Explicit denies, SCPs, permissions boundaries and session policies are reported for a human to handle.
+- **Human approval.** Changes arrive as pull requests. Nothing is applied without a merge.
+- **Untrusted input.** Event data is passed to the model as delimited data, and model output is validated and stripped of markup before it reaches a pull request.
+- **Least privilege for WhyDenied itself.** The analyzer can read only SSM parameters under `/whydenied/` and write only to its own table.
+
+## Comparison
+
+| Tool | Scope | WhyDenied adds |
+|---|---|---|
+| [Access Undenied](https://github.com/tenable/access-undenied-aws) | CLI that explains CloudTrail denials and suggests a policy | Runs continuously and delivers the fix as a pull request |
+| [Diagnose with Amazon Q](https://docs.aws.amazon.com/amazonq/latest/qdeveloper-ug/diagnose-console-errors.html) | Explains errors raised in the AWS console | Covers denials from Lambda, CI and scripts, with history |
+| [IAM Policy Autopilot](https://aws.amazon.com/blogs/security/iam-policy-autopilot-an-open-source-tool-that-brings-iam-policy-expertise-to-builders-and-ai-coding-assistants) | Generates policies from source code during development | Responds to denials that occur in running environments |
+
+## Getting started
+
+WhyDenied is self-hosted. It runs in your AWS account, and your CloudTrail data, IAM details and tokens stay there.
+
+### Prerequisites
+
+- A CloudTrail trail recording management events (read and write) in the target region
+- Infrastructure defined in Terraform in a GitHub repository, with IAM roles declared using an explicit `name`
+- [AWS SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html) and Python 3.14
+
+### 1. Deploy
+
+```bash
+git clone https://github.com/tusharkhatriofficial/whydenied.git
+cd whydenied
+sam build
+sam deploy --guided --parameter-overrides GitHubRepo=<owner>/<terraform-repo>
+```
+
+### 2. Add a GitHub token
+
+Create a [fine-grained personal access token](https://github.com/settings/personal-access-tokens/new) scoped to your Terraform repository with **Contents** and **Pull requests** set to read and write. Store it as a SecureString:
+
+```bash
+aws ssm put-parameter --type SecureString \
+  --name /whydenied/github-token --value '<token>'
+```
+
+### 3. Optional: AI review and alerts
+
+```bash
+# AI review notes via OpenAI (or deploy with AIProvider=bedrock and skip this)
+aws ssm put-parameter --type SecureString --name /whydenied/openai-api-key --value '<key>'
+
+# Alerts
+aws ssm put-parameter --type SecureString --name /whydenied/slack-webhook   --value '<webhook-url>'
+aws ssm put-parameter --type SecureString --name /whydenied/discord-webhook --value '<webhook-url>'
+```
+
+Any parameter that does not exist is skipped.
+
+### 4. Verify
+
+Trigger a denial from a role defined in your repository. Within about 30 seconds a pull request titled `WhyDenied: allow <action> for <role>` appears. The [demo repository](https://github.com/tusharkhatriofficial/whydenied-demo-infra) contains a ready-made example.
+
+## Configuration
+
+**Stack parameters**
+
+| Parameter | Default | Description |
+|---|---|---|
+| `GitHubRepo` | | Terraform repository that receives fix pull requests (`owner/name`) |
+| `AIProvider` | `openai` | `openai`, `bedrock` or `none` |
+| `OpenAIModel` | `gpt-5-mini` | Model used when `AIProvider=openai` |
+| `BedrockModel` | `us.anthropic.claude-haiku-4-5-20251001-v1:0` | Model or inference profile used when `AIProvider=bedrock` |
+
+**SSM parameters** (SecureString)
+
+| Name | Required | Purpose |
+|---|---|---|
+| `/whydenied/github-token` | Yes | Create branches and pull requests |
+| `/whydenied/openai-api-key` | With `AIProvider=openai` | AI review notes |
+| `/whydenied/slack-webhook` | No | Slack alerts |
+| `/whydenied/discord-webhook` | No | Discord alerts |
+
+**Denial status** (stored in the `whydenied-denials` table)
+
+| Status | Meaning |
 |---|---|
-| Catch denials | CloudTrail, EventBridge |
-| Analysis | AWS Lambda (Python), IAM policy simulator, `GetAccountAuthorizationDetails` |
-| Store and group | DynamoDB |
-| Write the fix | Amazon Bedrock (Claude) |
-| Deliver the fix | GitHub (PRs), Slack and Discord webhooks |
-| Dashboard | React on AWS Amplify, API Gateway |
-| Deploy WhyDenied itself | AWS SAM |
-| Demo target | Sample Terraform app with a deliberately missing permission |
+| `pr_open` | Fix pull request opened |
+| `needs_human` | Not safe to fix automatically, such as an explicit deny or SCP |
+| `role_not_found` | No matching `aws_iam_role` in the repository |
+| `not_a_role` | Caller is the root user or an IAM user; recorded only |
+| `error` | Opening the fix failed; details in `note` |
 
-## Scope (hackathon version)
+## Limitations
 
-**In scope**
-- Terraform, for IAM roles with an explicit `name`
-- Identity-based policies (the missing-`Allow` case)
-- One AWS account, one GitHub repo
+- **Management events only.** Data events such as S3 `GetObject` or DynamoDB `GetItem` require CloudTrail data event logging, which is billed separately.
+- **One region, one account and one repository per deployment.**
+- **Terraform only,** with roles matched by an explicit `name`. CloudFormation and CDK are not yet supported.
+- **Identity-based policies only.** Resource policies, boundaries, SCPs and session policies are reported, not fixed.
 
-**Out of scope (said openly)**
-- SCPs, session policies, VPC endpoint policies, resource policies
-- CDK / CloudFormation
-- Multiple accounts and AWS Organizations
+## Project structure
 
-## Status
+```
+template.yaml            SAM stack: EventBridge rule, Lambda, DynamoDB table
+src/analyzer/
+  app.py                 Lambda handler: record, deduplicate, fix, notify
+  parse.py               CloudTrail event to denial
+  terraform.py           Locate the role and render the policy
+  fixer.py               Branch, commit and pull request
+  github.py              Minimal GitHub REST client
+  explain.py             AI review notes (OpenAI or Bedrock)
+  notify.py              Slack and Discord payloads
+tests/                   Unit tests, including real captured CloudTrail events
+```
 
-🚧 In progress. See [docs/PLAN.md](docs/PLAN.md).
+## Development
 
-## Credits
+```bash
+python3 -m venv .venv && .venv/bin/pip install pytest boto3
+.venv/bin/python -m pytest
+```
 
-Anything third-party that this project uses will be listed here with its licence, as the hackathon rules require.
+---
+
+`#FirstCommit` `#WeMakeDevs` `#AWS` `#BuildOnAWS`

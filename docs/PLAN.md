@@ -1,6 +1,6 @@
 # Build plan
 
-Hackathon window: 17–20 September 2026. **Check the exact submission deadline on the event page. The form closes at that deadline, with no late entries.**
+Hackathon window: 17 to 20 September 2026. **Check the exact submission deadline on the event page. The form closes at that deadline, with no late entries.**
 
 ## What we submit
 
@@ -26,7 +26,7 @@ Judges score: real problem and impact · meaningful use of AWS · what you learn
 These can change the design, so do them before writing features.
 
 - [x] **Read-only denials:** by default they **don't** reach EventBridge. CloudTrail records them, but EventBridge only delivers write calls. Fix: set the rule's state to `ENABLED_WITH_ALL_CLOUDTRAIL_MANAGEMENT_EVENTS` (free, opt-in). Tested 18 Sep with `dynamodb:ListTables`: not delivered before the change, delivered after.
-- [x] **Delay:** about **20–25 seconds** from the call to the event arriving (`sqs:CreateQueue` 24s, `dynamodb:ListTables` 20s). A live demo is realistic.
+- [x] **Delay:** about **20 to 25 seconds** from the call to the event arriving (`sqs:CreateQueue` 24s, `dynamodb:ListTables` 20s). A live demo is realistic.
 - [x] **Error details:** checked for SQS and DynamoDB. Each event gives:
   - the role ARN, in `userIdentity.sessionContext.sessionIssuer.arn`. We match this against the Terraform code.
   - the action, resource and denial reason in `errorMessage`, e.g. *"not authorized to perform: dynamodb:ListTables on resource: arn:…:table/\* because no identity-based policy allows…"*.

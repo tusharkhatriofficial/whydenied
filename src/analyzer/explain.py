@@ -28,7 +28,9 @@ Reply with a JSON object only:
   "risk": "low" | "medium" | "high",  // impact of granting it
   "risk_reason": "one sentence",
   "reviewer_tip": "one sentence: the most useful thing to check before merging"
-}"""
+}
+
+Keep each field specific to this denial. Do not repeat the ARN or restate the fix."""
 
 _RISKS = {"low", "medium", "high"}
 

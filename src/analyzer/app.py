@@ -113,6 +113,9 @@ def claim(denial_id):
 
 def fix(denial):
     """Returns (status, pr_url, note)."""
+    if ":role/" not in denial.principal_arn:
+        # Root and IAM users aren't defined as Terraform roles; record and alert only.
+        return "not_a_role", None, "The caller is not an IAM role, so there is no Terraform to patch."
     token = secret(GITHUB_TOKEN_PARAM)
     if not (GITHUB_REPO and token):
         return "needs_human", None, "GitHub isn't configured, so no PR was opened."

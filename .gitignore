@@ -24,3 +24,4 @@ dist/
 
 # OS
 .DS_Store
+out.json
