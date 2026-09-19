@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1010 400" width="1010" height="400" role="img" aria-labelledby="t d">
+  <title id="t">WhyDenied architecture</title>
+  <desc id="d">A denied API call is recorded by CloudTrail, matched by an EventBridge rule and analysed by a Lambda function that stores it in DynamoDB, opens a fix pull request on GitHub, requests review notes from an AI model and alerts Slack or Discord. After the pull request is merged and applied, the workload succeeds.</desc>
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .zone { stroke-width: 1; stroke-dasharray: 5 4; }
+    .zone-label { font-size: 11px; font-weight: 600; letter-spacing: .08em; }
+    .card { stroke-width: 1.2; }
+    .card-key { stroke-width: 1.6; }
+    .title { font-size: 14px; font-weight: 600; }
+    .sub { font-size: 11px; }
+    .badge-text { font-size: 10px; font-weight: 700; }
+    .edge, .edge-deny, .edge-fix { fill: none; }
+    .edge { stroke-width: 1.4; }
+    .edge-deny { stroke-width: 1.6; }
+    .edge-fix { stroke-width: 1.6; stroke-dasharray: 6 4; }
+    .lbl { font-size: 10.5px; }
+    .lbl-deny { font-size: 10.5px; font-weight: 600; }
+    .pill { stroke-width: 1.2; }
+    .pill-text { font-size: 11px; font-weight: 600; }
+    text { fill: #1f2328; }
+    .zone { fill: #f6f8fa; stroke: #d1d9e0; }
+    .zone-label, .sub, .lbl { fill: #59636e; }
+    .card { fill: #ffffff; stroke: #d1d9e0; }
+    .card-key { fill: #ffffff; stroke: #bc4c00; }
+    .badge { fill: #bc4c00; }
+    .badge-text { fill: #ffffff; }
+    .edge { stroke: #59636e; } .head-flow { fill: #59636e; }
+    .edge-deny { stroke: #cf222e; } .lbl-deny, .head-deny { fill: #cf222e; }
+    .edge-fix, .pill { stroke: #1a7f37; } .pill-text, .head-fix { fill: #1a7f37; }
+    .pill { fill: #ffffff; }
+    @media (prefers-color-scheme: dark) {
+      text { fill: #f0f6fc; }
+      .zone { fill: #0d1117; stroke: #3d444d; }
+      .zone-label, .sub, .lbl { fill: #9198a1; }
+      .card { fill: #151b23; stroke: #3d444d; }
+      .card-key { fill: #151b23; stroke: #f0883e; }
+      .badge { fill: #f0883e; }
+      .badge-text { fill: #0d1117; }
+      .edge { stroke: #9198a1; } .head-flow { fill: #9198a1; }
+      .edge-deny { stroke: #ff7b72; } .lbl-deny, .head-deny { fill: #ff7b72; }
+      .edge-fix, .pill { stroke: #3fb950; } .pill-text, .head-fix { fill: #3fb950; }
+      .pill { fill: #151b23; }
+    }
+  </style>
+
+  <defs>
+    <marker id="a-flow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head-flow" d="M0,0 L10,5 L0,10 z"/></marker>
+    <marker id="a-deny" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="head-deny" d="M0,0 L10,5 L0,10 z"/></marker>
+    <marker id="a-fix" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="head-fix" d="M0,0 L10,5 L0,10 z"/></marker>
+  </defs>
+
+  <!-- zones -->
+  <rect class="zone" x="16" y="20" width="652" height="290" rx="12"/>
+  <text class="zone-label" x="34" y="44">YOUR AWS ACCOUNT</text>
+  <rect class="zone" x="700" y="20" width="294" height="290" rx="12"/>
+  <text class="zone-label" x="718" y="44">INTEGRATIONS</text>
+
+  <!-- 1 workload -->
+  <rect class="card" x="36" y="110" width="134" height="80" rx="9"/>
+  <circle class="badge" cx="52" cy="128" r="9"/><text class="badge-text" x="52" y="131.5" text-anchor="middle">1</text>
+  <text class="title" x="68" y="133">Workload</text>
+  <text class="sub" x="50" y="156">Lambda, containers,</text>
+  <text class="sub" x="50" y="172">CI jobs, scripts</text>
+
+  <!-- 2 cloudtrail -->
+  <rect class="card" x="196" y="110" width="134" height="80" rx="9"/>
+  <circle class="badge" cx="212" cy="128" r="9"/><text class="badge-text" x="212" y="131.5" text-anchor="middle">2</text>
+  <text class="title" x="228" y="133">CloudTrail</text>
+  <text class="sub" x="210" y="156">records every call,</text>
+  <text class="sub" x="210" y="172">including denials</text>
+
+  <!-- 3 eventbridge -->
+  <rect class="card" x="356" y="110" width="134" height="80" rx="9"/>
+  <circle class="badge" cx="372" cy="128" r="9"/><text class="badge-text" x="372" y="131.5" text-anchor="middle">3</text>
+  <text class="title" x="388" y="133">EventBridge</text>
+  <text class="sub mono" x="370" y="156">errorCode =</text>
+  <text class="sub mono" x="370" y="172">AccessDenied*</text>
+
+  <!-- 4 analyzer -->
+  <rect class="card-key" x="516" y="110" width="134" height="80" rx="9"/>
+  <circle class="badge" cx="532" cy="128" r="9"/><text class="badge-text" x="532" y="131.5" text-anchor="middle">4</text>
+  <text class="title" x="548" y="133">Analyzer</text>
+  <text class="sub" x="530" y="156">parse, deduplicate,</text>
+  <text class="sub" x="530" y="172">generate exact fix</text>
+
+  <!-- dynamodb -->
+  <rect class="card" x="516" y="228" width="134" height="58" rx="9"/>
+  <text class="title" x="530" y="252">DynamoDB</text>
+  <text class="sub" x="530" y="272">count, status, PR link</text>
+
+  <!-- main flow -->
+  <path class="edge-deny" d="M170,150 L194,150" marker-end="url(#a-deny)"/>
+  <text class="lbl-deny" x="182" y="101" text-anchor="middle">AccessDenied</text>
+  <path class="edge-deny" d="M182,104 L182,146" stroke-dasharray="2 3"/>
+  <path class="edge" d="M330,150 L354,150" marker-end="url(#a-flow)"/>
+  <path class="edge" d="M490,150 L514,150" marker-end="url(#a-flow)"/>
+  <path class="edge" d="M583,190 L583,226" marker-end="url(#a-flow)" marker-start="url(#a-flow)"/>
+
+  <!-- integrations -->
+  <rect class="card-key" x="720" y="62" width="254" height="66" rx="9"/>
+  <circle class="badge" cx="736" cy="80" r="9"/><text class="badge-text" x="736" y="83.5" text-anchor="middle">5</text>
+  <text class="title" x="752" y="85">GitHub</text>
+  <text class="sub" x="734" y="110">branch, policy file, pull request</text>
+
+  <rect class="card" x="720" y="146" width="254" height="66" rx="9"/>
+  <text class="title" x="734" y="170">OpenAI or Bedrock</text>
+  <text class="sub" x="734" y="194">review notes only, never the fix</text>
+
+  <rect class="card" x="720" y="230" width="254" height="66" rx="9"/>
+  <text class="title" x="734" y="254">Slack, Discord</text>
+  <text class="sub" x="734" y="278">alert with a link to the PR</text>
+
+  <path class="edge" d="M650,142 C680,142 690,95 718,95" marker-end="url(#a-flow)"/>
+  <path class="edge" d="M650,150 C685,150 690,179 718,179" marker-end="url(#a-flow)"/>
+  <path class="edge" d="M650,160 C680,160 690,263 718,263" marker-end="url(#a-flow)"/>
+
+  <!-- the loop back -->
+  <path class="edge-fix" d="M974,95 L988,95 Q996,95 996,103 L996,338 Q996,350 984,350 L115,350 Q103,350 103,338 L103,194" marker-end="url(#a-fix)"/>
+
+  <rect class="pill" x="786" y="337" width="136" height="26" rx="13"/>
+  <text class="pill-text" x="854" y="354" text-anchor="middle">6  Review and merge</text>
+  <rect class="pill" x="492" y="337" width="136" height="26" rx="13"/>
+  <text class="pill-text" x="560" y="354" text-anchor="middle">7  terraform apply</text>
+  <rect class="pill" x="170" y="337" width="236" height="26" rx="13"/>
+  <text class="pill-text" x="288" y="354" text-anchor="middle">8  Role gains one exact permission</text>
+
+  <text class="lbl" x="505" y="388" text-anchor="middle">Nothing reaches IAM without a reviewed merge.</text>
+</svg>

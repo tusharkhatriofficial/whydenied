@@ -18,16 +18,7 @@ WhyDenied removes that work. Roles can start with minimal permissions and grow o
 
 ## How it works
 
-```mermaid
-flowchart LR
-  A[Workload] -- denied API call --> CT[CloudTrail]
-  CT --> EB[EventBridge rule]
-  EB --> L[Analyzer Lambda]
-  L <--> DDB[(DynamoDB)]
-  L -- locate role, push fix --> GH[GitHub]
-  L -- review notes --> AI[OpenAI or Bedrock]
-  L --> N[Slack / Discord]
-```
+<p align="center"><img src="docs/architecture.svg" alt="WhyDenied architecture: a denied call flows from CloudTrail through EventBridge to the analyzer, which opens a fix pull request; after review and terraform apply the workload succeeds" width="100%"></p>
 
 1. **Capture.** An EventBridge rule receives every `AccessDenied` and `UnauthorizedOperation` event from CloudTrail, including read-only calls, which EventBridge excludes by default.
 2. **Parse.** The analyzer extracts the IAM role (not the temporary session), the action, the resource and the denial reason.
