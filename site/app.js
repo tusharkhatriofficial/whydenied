@@ -659,13 +659,13 @@
   };
 
   function stageNotes(items) {
-    return h("ol", { class: "notes" }, items.map((t) => h("li", null, h("span", null, t))));
+    return h("ul", { class: "notes" }, items.map((t) => h("li", null, h("span", null, t))));
   }
 
   function aiCard() {
     return h("div", { class: "memo" },
       h("div", { class: "memo__head" },
-        h("span", { text: "Review memo, AI assisted" }),
+        h("span", { class: "memo__title", text: "AI review notes" }),
         stamp("outline", "Risk " + AI_NOTES.risk, "stamp--flat")),
       h("p", { class: "memo__summary", text: AI_NOTES.summary }),
       h("dl", { class: "kv" },
@@ -794,7 +794,7 @@
     {
       id: "github", kicker: "Stage 5", title: "The exact fix, as Terraform",
       desc: "WhyDenied finds the aws_iam_role with name = \"whydenied-test-denied\" in your repository and writes one inline policy next to it, on a new branch.",
-      render: () => codeBlock({ kind: "Listing", name: EVT.file, lang: "hcl", code: FIX_HCL, marks: ['"sqs:CreateQueue"'] }),
+      render: () => codeBlock({ name: EVT.file, lang: "hcl", code: FIX_HCL, marks: ['"sqs:CreateQueue"'] }),
     },
     {
       id: "ai", kicker: "Optional", title: "AI review notes for the reviewer",
@@ -872,8 +872,7 @@
         n.classList.toggle("is-active", on);
         n.setAttribute("aria-pressed", on ? "true" : "false");
       });
-      const kick = clear($("#stage-kicker"));
-      append(kick, ["Fig. " + (idx + 2), h("span", { text: stage.kicker })]);
+      $("#stage-kicker").textContent = stage.kicker;
       $("#stage-title").textContent = stage.title;
       $("#stage-desc").textContent = stage.desc;
       $("#stage-count").textContent = (idx + 1) + " / " + order.length;
@@ -1135,7 +1134,7 @@
       h("dd", { class: mono ? "mono" : null }, val(v), sub ? h("span", { class: "sub", text: sub }) : null));
 
     const denialPanel = h("section", { class: "panel", "aria-label": "Parsed denial" },
-      h("div", { class: "panel__head" }, h("span", null, h("b", { text: "Table 1" }), "Parsed denial"), h("span", { text: TYPE_LABEL[d.principal_type] || val(d.principal_type) })),
+      h("div", { class: "panel__head" }, h("span", { class: "panel__title", text: "Parsed denial" }), h("span", { text: TYPE_LABEL[d.principal_type] || val(d.principal_type) })),
       h("dl", { class: "kv" },
         row("Role", d.role_name || (d.principal_type === "role" ? null : "Not a role"), d.principal_arn || null, true),
         row("Action", d.action, null, true),
@@ -1144,10 +1143,10 @@
 
     let fixPanel;
     if (fixable) {
-      fixPanel = codeBlock({ kind: "Listing 1", name: String(data.fix.filename || "fix.tf"), lang: "hcl", code: data.fix.hcl, label: "Generated Terraform fix", marks: ['"' + String(d.action || "") + '"'] });
+      fixPanel = codeBlock({ name: String(data.fix.filename || "fix.tf"), lang: "hcl", code: data.fix.hcl, label: "Generated Terraform fix", marks: ['"' + String(d.action || "") + '"'] });
     } else {
       fixPanel = h("section", { class: "panel", "aria-label": "No automatic fix" },
-        h("div", { class: "panel__head" }, h("span", null, h("b", { text: "Listing 1" }), "Terraform fix")),
+        h("div", { class: "panel__head" }, h("span", { class: "panel__title", text: "Terraform fix" })),
         h("div", { class: "empty-fix" },
           h("strong", { text: "No automatic fix" }),
           h("span", { text: "WhyDenied records this denial and alerts a human instead of opening a pull request." })));
@@ -1353,15 +1352,13 @@
       nodes.push(callout("warn",
         h("p", null, h("strong", { text: "No aws_iam_role resources found." }), " WhyDenied opens fixes against the repository that defines your roles. Point it at the repository with your ", h("code", { text: "aws_iam_role" }), " resources, or add them here.")));
     } else {
-      const list = h("ol", { class: "roles" });
-      let n = 0;
+      const list = h("ul", { class: "roles" });
       for (const r of roles) {
         const ok = r.ready === true;
         const pathLink = r.path
           ? h("a", { href: "https://github.com/" + repo.full + "/blob/" + encPath(branch) + "/" + encPath(String(r.path)), rel: "noopener", text: String(r.path) })
           : null;
         list.appendChild(h("li", { class: "role" },
-          h("span", { class: "role__no", text: "R" + (++n) }),
           h("div", { class: "role__main" },
             r.name ? h("div", { class: "role__name", text: String(r.name) }) : h("div", { class: "role__name is-null", text: "No explicit name" }),
             h("div", { class: "role__meta" }, String(r.address || ""), pathLink ? " in " : null, pathLink),
