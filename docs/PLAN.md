@@ -48,13 +48,17 @@ These can change the design, so do them before writing features.
 - [ ] Bedrock prompt: given the Terraform file and the missing action and resource, return the smallest change (no `*`) plus an explanation
 - [ ] Check the change: the Terraform must still parse, and the new statement must only add the missing action on the specific resource
 - [ ] Open a PR with the explanation as its description
-- [ ] Slack alert with a link to the PR
+- [ ] Team alerts with a link to the PR, sent to **Slack and/or Discord**:
+  - both use incoming webhooks, so the setup is just a URL per channel
+  - the webhook URLs are stored in SSM Parameter Store as SecureStrings, because anyone holding one can post to the channel
+  - one alert per new denial, not per repeat; repeats only bump the count
+  - Discord messages are formatted as embeds, Slack messages as Block Kit
 
 ## Sunday: dashboard, demo, submission
 
 - [ ] API Gateway plus a small React dashboard on Amplify: list of denials, how many times each happened, their status, PR links
 - [ ] **By about 3 PM, stop adding features**
-- [ ] Record the demo: call the app → it's denied → Slack alert → PR appears → merge → `terraform apply` → call again → it works
+- [ ] Record the demo: call the app → it's denied → Slack/Discord alert → PR appears → merge → `terraform apply` → call again → it works
 - [ ] Writeup and README tidy-up; list credits and licences
 - [ ] Submit well before the deadline
 
@@ -65,7 +69,7 @@ These can change the design, so do them before writing features.
 | CloudTrail delay makes the live demo slow | Pre-record the waiting part; trigger it live in the video |
 | Read-only denials don't reach EventBridge | Use a write action in the demo |
 | Bedrock produces an overly broad or broken change | Check the change in code; refuse `*`; fall back to a generated statement template |
-| Running out of time | The dashboard is optional; Slack plus the PR is a complete demo |
+| Running out of time | The dashboard is optional; a Slack/Discord alert plus the PR is a complete demo |
 | AWS costs | $20 budget alert; no S3 data events; `sam delete` afterwards |
 
 ## After the hackathon

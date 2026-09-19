@@ -30,7 +30,7 @@ The errors also come from places nobody is watching, such as Lambda logs, CI run
 3. **Explains** which policy type blocked the request and which action is missing.
 4. **Finds** the Terraform file that defines the role.
 5. **Opens a pull request** with the smallest change that fixes it (never `*`) and a plain-English explanation.
-6. **Notifies** Slack and shows everything on a dashboard.
+6. **Notifies** your team on Slack or Discord and shows everything on a dashboard.
 
 A person still reviews and merges the PR. WhyDenied never changes IAM directly.
 
@@ -57,7 +57,7 @@ flowchart LR
   L -- find role in repo --> GH[GitHub API]
   L -- minimal diff + explanation --> BR[Bedrock]
   L -- open PR --> GH
-  L --> SL[Slack webhook]
+  L --> SL[Slack / Discord webhook]
   UI[Dashboard on Amplify] --> API[API Gateway] --> DDB
 ```
 
@@ -69,7 +69,7 @@ flowchart LR
 | Analysis | AWS Lambda (Python), IAM policy simulator, `GetAccountAuthorizationDetails` |
 | Store and group | DynamoDB |
 | Write the fix | Amazon Bedrock (Claude) |
-| Deliver the fix | GitHub App (PRs), Slack webhook |
+| Deliver the fix | GitHub (PRs), Slack and Discord webhooks |
 | Dashboard | React on AWS Amplify, API Gateway |
 | Deploy WhyDenied itself | AWS SAM |
 | Demo target | Sample Terraform app with a deliberately missing permission |
