@@ -6,7 +6,8 @@ WhyDenied watches CloudTrail for denied API calls, works out which IAM role is m
 
 Built for [First Commit](https://www.wemakedevs.org/aws/first-commit), the WeMakeDevs × AWS hackathon (17 to 20 September 2026).
 
-Example: [the pull request WhyDenied opened for the demo app](https://github.com/tusharkhatriofficial/whydenied-demo-infra/pull/1).
+**Live:** [main.d2nltux9t41fs1.amplifyapp.com](https://main.d2nltux9t41fs1.amplifyapp.com) (try it, check your Terraform, deploy in one click)  
+**Example:** [the pull request WhyDenied opened for the demo app](https://github.com/tusharkhatriofficial/whydenied-demo-infra/pull/1)
 
 ---
 
