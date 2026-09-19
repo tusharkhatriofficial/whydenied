@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 import boto3
 from botocore.exceptions import ClientError
 
+import explain
 import notify
 from fixer import NoSafeFix, RoleNotFound, open_fix_pr
 from github import GitHub
@@ -23,6 +24,12 @@ GITHUB_REPO = os.environ.get("GITHUB_REPO", "")
 GITHUB_TOKEN_PARAM = os.environ.get("GITHUB_TOKEN_PARAM", "")
 SLACK_WEBHOOK_PARAM = os.environ.get("SLACK_WEBHOOK_PARAM", "")
 DISCORD_WEBHOOK_PARAM = os.environ.get("DISCORD_WEBHOOK_PARAM", "")
+AI_CONFIG = {
+    "provider": os.environ.get("AI_PROVIDER", "none"),
+    "openai_key_param": os.environ.get("OPENAI_KEY_PARAM", ""),
+    "openai_model": os.environ.get("OPENAI_MODEL", ""),
+    "bedrock_model": os.environ.get("BEDROCK_MODEL", ""),
+}
 
 _secrets = {}
 
@@ -110,7 +117,10 @@ def fix(denial):
     if not (GITHUB_REPO and token):
         return "needs_human", None, "GitHub isn't configured, so no PR was opened."
     try:
-        return "pr_open", open_fix_pr(denial, GitHub(token, GITHUB_REPO)), None
+        def explainer(role, source):
+            return explain.explain(denial, role.address, source, AI_CONFIG, secret)
+
+        return "pr_open", open_fix_pr(denial, GitHub(token, GITHUB_REPO), explainer), None
     except NoSafeFix as e:
         return "needs_human", None, str(e)
     except RoleNotFound as e:

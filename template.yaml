@@ -8,11 +8,23 @@ Parameters:
     Default: tusharkhatriofficial/whydenied-demo-infra
     Description: owner/name of the Terraform repo WhyDenied opens fix PRs against
 
+  AIProvider:
+    Type: String
+    Default: openai
+    AllowedValues: [openai, bedrock, none]
+    Description: Who writes the PR explanation. The fix itself never comes from the AI.
+  OpenAIModel:
+    Type: String
+    Default: gpt-5-mini
+  BedrockModel:
+    Type: String
+    Default: us.anthropic.claude-haiku-4-5-20251001-v1:0
+
 Globals:
   Function:
     Runtime: python3.14
     Architectures: [arm64]
-    Timeout: 30
+    Timeout: 60
     MemorySize: 256
 
 Resources:
@@ -43,12 +55,22 @@ Resources:
           GITHUB_TOKEN_PARAM: /whydenied/github-token
           SLACK_WEBHOOK_PARAM: /whydenied/slack-webhook
           DISCORD_WEBHOOK_PARAM: /whydenied/discord-webhook
+          OPENAI_KEY_PARAM: /whydenied/openai-api-key
+          AI_PROVIDER: !Ref AIProvider
+          OPENAI_MODEL: !Ref OpenAIModel
+          BEDROCK_MODEL: !Ref BedrockModel
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref DenialsTable
         # Read only the parameters under /whydenied/, nothing else in SSM.
         - SSMParameterWithSlashPrefixReadPolicy:
             ParameterName: /whydenied/*
+        - Statement:
+            - Effect: Allow
+              Action: bedrock:InvokeModel
+              Resource:
+                - arn:aws:bedrock:*::foundation-model/*
+                - !Sub arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:inference-profile/*
 
   AnalyzerLogGroup:
     Type: AWS::Logs::LogGroup
