@@ -2,6 +2,12 @@ AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: WhyDenied - turns AWS AccessDenied events into fixes
 
+Parameters:
+  GitHubRepo:
+    Type: String
+    Default: tusharkhatriofficial/whydenied-demo-infra
+    Description: owner/name of the Terraform repo WhyDenied opens fix PRs against
+
 Globals:
   Function:
     Runtime: python3.14
@@ -32,9 +38,17 @@ Resources:
       Environment:
         Variables:
           DENIALS_TABLE: !Ref DenialsTable
+          GITHUB_REPO: !Ref GitHubRepo
+          # SecureStrings you create yourself; any that don't exist are skipped.
+          GITHUB_TOKEN_PARAM: /whydenied/github-token
+          SLACK_WEBHOOK_PARAM: /whydenied/slack-webhook
+          DISCORD_WEBHOOK_PARAM: /whydenied/discord-webhook
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref DenialsTable
+        # Read only the parameters under /whydenied/, nothing else in SSM.
+        - SSMParameterWithSlashPrefixReadPolicy:
+            ParameterName: /whydenied/*
 
   AnalyzerLogGroup:
     Type: AWS::Logs::LogGroup
