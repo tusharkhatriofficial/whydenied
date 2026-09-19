@@ -27,16 +27,19 @@
   --measure: 65ch;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --paper: #000000;
-    --paper-2: #141414;
-    --ink: #FFFFFF;
-    --ink-2: #A6A6A6;
-    --faint: #2A2A2A;
-    --focus: #FFFFFF;
-  }
+/* White is the default for everyone. Dark is opt-in via the header toggle (theme.js). */
+:root { color-scheme: light; }
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #000000;
+  --paper-2: #141414;
+  --ink: #FFFFFF;
+  --ink-2: #A6A6A6;
+  --faint: #2A2A2A;
+  --focus: #FFFFFF;
 }
+
+.theme-toggle { background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer; }
 
 /* ---------- base ---------- */
 

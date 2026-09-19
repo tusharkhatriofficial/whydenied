@@ -7,9 +7,9 @@
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>WhyDenied: AccessDenied errors to reviewed pull requests</title>
   <meta name="description" content="WhyDenied watches CloudTrail for AWS AccessDenied errors and opens a pull request against your Terraform that grants exactly the missing permission. Self-hosted, reviewed by a human.">
-  <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FFFFFF">
+  <script src="theme.js"></script>
   <meta property="og:title" content="WhyDenied">
   <meta property="og:description" content="Turn AWS AccessDenied errors into reviewed pull requests.">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
@@ -30,6 +30,7 @@
         <a class="nav__link hide-sm" href="#setup">Setup</a>
         <a class="nav__link hide-sm" href="#live">Live feed</a>
         <a class="nav__link hide-md" href="#safety">Safety</a>
+        <button class="nav__link theme-toggle" id="theme-toggle" type="button" aria-pressed="false">Dark</button>
         <a class="nav__link" href="https://github.com/tusharkhatriofficial/whydenied" rel="noopener">GitHub</a>
         <a class="btn btn--sm nav__cta" href="https://github.com/tusharkhatriofficial/whydenied-demo-infra/pull/1" rel="noopener">Example PR</a>
       </nav>
