@@ -32,6 +32,9 @@ These can change the design, so do them before writing features.
   - the action, resource and denial reason in `errorMessage`, e.g. *"not authorized to perform: dynamodb:ListTables on resource: arn:…:table/\* because no identity-based policy allows…"*.
   - Watch out: SQS writes the action in lower case (`sqs:createqueue`). Build the action from `eventSource` plus `eventName` instead.
 
+- [x] **Data events:** everyday app calls like S3 `GetObject`, DynamoDB `GetItem` and SQS `SendMessage` are CloudTrail **data events**. Our trail only records management events, so it doesn't see those denials. Catching them means turning on data events, which AWS charges for. The demo therefore uses `ssm:GetParameter`, a management event. Mention this limit in the writeup.
+- [ ] **Bedrock:** every model returns `Operation not allowed`. The account is billed by AWS India (AISPL) and pays with UPI only, and Marketplace models may need a card. A support case is open. Fix generation doesn't depend on Bedrock; it only writes the explanation.
+
 ## Friday: from catching the error to explaining it
 
 - [ ] SAM project skeleton: EventBridge rule → Lambda → DynamoDB
