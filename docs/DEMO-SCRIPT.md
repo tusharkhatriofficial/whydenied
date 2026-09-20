@@ -1,73 +1,65 @@
 # Demo video script
 
-Target length 2:45 to 3:00. Hard limit is 3 minutes. AWS must be visible on screen, not only mentioned.
+Under 3 minutes. AWS has to be on screen, not just mentioned.
 
 ## Before recording
 
-Set up, in this order:
+1. **Terminal** in `~/core/whydenied-demo-infra`, big font, `export AWS_PROFILE=whydenied` done, scrollback cleared.
+2. **Tabs, left to right:** the live page, CloudTrail event history, the DynamoDB table, Discord, the demo repo's pull requests.
+3. **Check:** the feed shows one denial, `ssm:GetParameter`, PR open. Do not run the `{"mode":"list"}` command yet. Only the first sighting opens a pull request.
+4. 1080p, mic tested, notifications off.
 
-1. **Terminal**, large font (18pt or more), in `~/core/whydenied-demo-infra`, with `export AWS_PROFILE=whydenied` already run. Clear the scrollback.
-2. **Browser tabs**, in this order so you can move left to right:
-   1. https://main.d2nltux9t41fs1.amplifyapp.com (the live page)
-   2. AWS console: CloudTrail event history, filtered to error code `AccessDenied`
-   3. AWS console: DynamoDB, table `whydenied-denials`, Explore items
-   4. Discord, on the channel receiving alerts
-   5. https://github.com/tusharkhatriofficial/whydenied-demo-infra/pulls
-3. **Check the state:** the feed should show exactly one denial, `ssm:GetParameter`, PR open. The `{"mode":"list"}` call must not have been run yet, because only the first sighting opens a pull request.
-4. **Screen recording:** 1080p or better, microphone tested. Hide bookmarks and notifications.
-
-Two facts to keep in mind while narrating:
-- The pull request appears about 20 to 30 seconds after the failed call. Fill that gap with the CloudTrail and DynamoDB tabs.
-- The final invoke must use `{"mode":"list"}`, because that is the permission this run grants. The plain invoke still fails, since PR #1 is deliberately left open.
+The pull request takes 20 to 30 seconds to appear. Use the CloudTrail and DynamoDB tabs to fill it.
 
 ## Script
 
-Timings are targets, not exact.
+The lines below are how you'd say it, not a paragraph to read out. Say it your way.
 
-### 0:00 to 0:20  The problem
+### 0:00  The problem
+**Live page.**
 
-**Show:** the live page, top section.
+> Everyone on AWS has hit AccessDenied. And fixing it properly is annoying: find the policy, find the Terraform, open a PR. So people just click it in the console, or slap a wildcard on it.
+>
+> This does it in thirty seconds.
 
-> Every team on AWS hits AccessDenied. Fixing one properly means finding which policy is missing, finding the Terraform that defines the role, and opening a pull request. That takes half an hour, so people either click a fix into the console, which their next terraform apply reverts, or they grant a wildcard and move on. WhyDenied does that work in about thirty seconds.
-
-### 0:20 to 0:40  Break it
-
-**Show:** terminal.
+### 0:20  Break it
+**Terminal.**
 
 ```bash
 aws lambda invoke --function-name orders-api \
   --payload '{"mode":"list"}' --cli-binary-format raw-in-base64-out out.json && cat out.json
 ```
 
-> This Lambda reads its settings from Parameter Store. Its role is missing one permission, so the call fails: not authorized to perform ssm:GetParametersByPath. Nothing is set up in advance; WhyDenied has never seen this denial before.
+> This Lambda reads its settings from Parameter Store. Its role can't. There's the denial.
+>
+> Nothing's staged. WhyDenied has never seen this one.
 
-### 0:40 to 1:05  AWS records it
+### 0:40  AWS sees it
+**CloudTrail, open the event, point at `errorCode` and the role.**
 
-**Show:** CloudTrail event history, then open the event and point at `errorCode`, `eventName` and the role in `sessionIssuer`.
+> CloudTrail logs the failed call, and an EventBridge rule picks up the denials.
+>
+> One thing I learned the hard way: EventBridge skips read-only denials unless you opt in. That's half of them.
 
-> CloudTrail records every management API call, including the ones that fail. An EventBridge rule matches the denials. One detail worth knowing: EventBridge drops read-only denials by default, so the rule opts in explicitly. Without that, WhyDenied would miss about half of real failures.
+### 1:05  One issue, not five hundred
+**DynamoDB, the new row.**
 
-### 1:05 to 1:25  It becomes one issue
+> A Lambda pulls out the role, the action, the resource. One row each, with a count. Same error five hundred times is still one row, and one PR.
 
-**Show:** DynamoDB, table items, the new row.
+### 1:25  The team gets told
+**Discord.**
 
-> A Lambda works out the role, the action and the resource, and stores one item per combination with a count. Five hundred identical failures stay one issue, and only the first one opens a pull request.
+> One alert, with a link.
 
-### 1:25 to 1:40  The team hears about it
+### 1:40  The fix
+**The new PR. Files changed, then back to the description.**
 
-**Show:** Discord.
+> One file. That one action, on that one path. No wildcard.
+>
+> The AI notes underneath say what the app was doing and what to check. That's all the model does. The policy itself is written by code, so the AI can't widen anything.
 
-> The team gets one alert, with a link.
-
-### 1:40 to 2:10  The fix
-
-**Show:** the new pull request. Open the Files changed tab, then scroll back to the description.
-
-> Here is the pull request. One new file, granting exactly ssm:GetParametersByPath on exactly that path. No wildcard. The AI review below explains what the workload was doing, whether the access looks expected, and what to check before merging. The model only writes those notes. The policy itself is generated by code, so an AI mistake cannot widen permissions.
-
-### 2:10 to 2:30  Merge and recover
-
-**Show:** click Merge, then the terminal.
+### 2:10  Merge it
+**Click Merge, then terminal.**
 
 ```bash
 git pull
@@ -76,30 +68,30 @@ aws lambda invoke --function-name orders-api \
   --payload '{"mode":"list"}' --cli-binary-format raw-in-base64-out out.json && cat out.json
 ```
 
-> A human approves the change, Terraform applies it, and the app works. The code and the account now agree, because the fix went through the repository.
+> I approve it, apply it, and the app works. And the code matches the account, because the fix went through the repo.
 
-### 2:30 to 2:55  Anyone can run it
+### 2:30  Your turn
+**Live page: paste an error in step 1, then step 3.**
 
-**Show:** the live page. Paste an error into step 1, then scroll to step 3 and hover Launch in AWS.
+> Same parser runs here, so you can paste your own error and see what it'd write. It'll check your repo's roles too, and install into your account in one click.
+>
+> It runs in your account. Your CloudTrail, your tokens, nothing leaves.
 
-> The page runs the same parser on Lambda, so anyone can paste an error and see the Terraform it would propose. It checks whether your repository's roles can be matched, and it installs into your own account in one click. WhyDenied is self-hosted: your CloudTrail data and tokens never leave your account.
+### 2:55  Close
 
-### 2:55 to 3:00  Close
+> Least privilege, but actually doable. Start tight, add one reviewed permission at a time.
 
-> Least privilege stops being a nice idea and becomes practical. Start with tight roles, and grow them one reviewed permission at a time.
+## If it goes wrong
 
-## If something goes wrong
-
-| Problem | What to do |
+| Problem | Do this |
 |---|---|
-| No pull request after 60 seconds | Check the Lambda logs: `aws logs tail /aws/lambda/whydenied-analyzer --since 5m`. Keep narrating over the CloudTrail tab. |
-| The denial was already recorded | Delete the row and invoke again: `aws dynamodb delete-item --table-name whydenied-denials --key "{\"id\":{\"S\":\"<id>\"}}"` |
-| `terraform apply` wants to change other things | Use `terraform apply -target=aws_iam_role_policy.<name>`, or accept the plan if it is only the new policy. |
-| Discord is slow | Move on; the pull request is the important part. |
-| You run over 3 minutes | Cut the DynamoDB section (1:05 to 1:25) and mention the counting over the CloudTrail tab. |
+| No PR after 60 seconds | `aws logs tail /aws/lambda/whydenied-analyzer --since 5m`. Keep talking over CloudTrail. |
+| Denial already recorded | `aws dynamodb delete-item --table-name whydenied-denials --key "{\"id\":{\"S\":\"<id>\"}}"`, invoke again. |
+| Apply wants extra changes | Accept it if it's only the new policy, or `-target` the policy. |
+| Discord slow | Skip it. The PR is the point. |
+| Over 3 minutes | Cut DynamoDB, mention the counting over CloudTrail. |
 
-## After recording
+## After
 
-- Upload to YouTube as public or unlisted, titled "WhyDenied: AWS AccessDenied to a reviewed pull request".
-- Put the link at the top of `docs/SUBMISSION.md` and in the submission form.
-- The second pull request stays merged in the demo repository as evidence.
+- YouTube, public or unlisted: "WhyDenied: AWS AccessDenied to a reviewed pull request".
+- Link goes at the top of `docs/SUBMISSION.md` and in the form.
