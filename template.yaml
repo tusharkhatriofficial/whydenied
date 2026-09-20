@@ -5,7 +5,8 @@ Description: WhyDenied - turns AWS AccessDenied events into fixes
 Parameters:
   GitHubRepo:
     Type: String
-    Default: tusharkhatriofficial/whydenied-demo-infra
+    AllowedPattern: "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+    ConstraintDescription: Enter the repository as owner/name.
     Description: owner/name of the Terraform repo WhyDenied opens fix PRs against
 
   AIProvider:
